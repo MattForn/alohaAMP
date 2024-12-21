@@ -23,23 +23,24 @@ env = gym.make("gym_aloha/AlohaInsertion-features-v0")
 observation, info = env.reset()
 print(type(observation["top"]))
 print(np.shape(observation["top"]))
-frames = []
-start_pose = np.asarray(gym_aloha.constants.START_ARM_POSE.copy())
-start_pose = np.delete(start_pose, [8, 15])
 
-# Move the Grippers closer to each other
-close_pose = start_pose.copy()
-close_pose[1],close_pose[8] = -0.5,-0.5
-close_pose[2],close_pose[9] = 0.9,0.9
-close_pose[6],close_pose[13] = 0.5,0.5
-
-
-model = stable_baselines3.SAC("MultiInputPolicy", env, verbose=1, buffer_size=1024, batch_size=64)
+model = stable_baselines3.SAC("MultiInputPolicy", env, verbose=1, buffer_size=2**21, batch_size=2**12)
 
 model.learn(total_timesteps=3600, callback=CheckpointCallback(save_freq=1000, save_path='./models/', name_prefix='sac_ConvNext_aloha'))
 
 # save the model
 model.save("sac_ConvNext_aloha")
+
+
+#---------------Animation----------------
+frames = []
+start_pose = np.asarray(gym_aloha.constants.START_ARM_POSE.copy())
+start_pose = np.delete(start_pose, [8, 15])
+# Move the Grippers closer to each other
+close_pose = start_pose.copy()
+close_pose[1],close_pose[8] = -0.5,-0.5
+close_pose[2],close_pose[9] = 0.9,0.9
+close_pose[6],close_pose[13] = 0.5,0.5
 
 '''
 # Bring grippers into position
@@ -54,7 +55,6 @@ for i in range(10):
         observation, info = env.reset()
         
 '''
-
 # loop for acting
 for i in range(100):
     # get model predicted action
@@ -73,7 +73,7 @@ for i in range(100):
         observation, info = env.reset()
 
 env.close()
-filename = "example" + str(model._total_timesteps) + ".mp4"
+filename = "examples/example" + str(model._total_timesteps) + ".mp4"
 imageio.mimsave(filename, np.stack(frames), fps=25)
 
 
