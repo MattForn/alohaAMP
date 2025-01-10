@@ -54,6 +54,10 @@ if load_saved_model:
         model.device="cuda" if torch.cuda.is_available() else "cpu"
     except:
         print('------- can not loaded Model -------')
+        load_saved_model = False
+        
+if not load_saved_model:
+        print('------- creating new Model -------')
         model = stable_baselines3.SAC("MultiInputPolicy", 
                                       env, 
                                       verbose=verbose, 
@@ -103,7 +107,7 @@ class ErrorCatchingCallback(CheckpointCallback):
 ecc = ErrorCatchingCallback(save_freq=10000, save_path='./models/',
                                                 name_prefix='sac_ConvNext_aloha',
                                                 save_replay_buffer=True,
-                                                del_old_checkpoints=True)
+                                                del_old_checkpoints=False)
 print("starting to learn")
 model.learn(total_timesteps=10000000, callback=ecc)
 # save the model
