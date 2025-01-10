@@ -1,0 +1,275 @@
+import gymnasium as gym
+import numpy as np
+from dm_control import mujoco
+from dm_control.rl import control
+from gymnasium import spaces
+from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
+import torch
+import torch.nn.functional as F
+from torchvision.models import convnext_base
+
+from gym_aloha.constants import (
+    ACTIONS,
+    ASSETS_DIR,
+    DT,
+    JOINTS,
+)
+from gym_aloha.tasks.sim import BOX_POSE, InsertionTask, TransferCubeTask
+from gym_aloha.tasks.sim_end_effector import (
+    InsertionEndEffectorTask,
+    TransferCubeEndEffectorTask,
+)
+from gym_aloha.utils import sample_box_pose, sample_insertion_pose
+
+
+class ConvNeXtFeatureExtractor(BaseFeaturesExtractor):
+    def __init__(self, observation_space, output_dim=1024):  # ConvNeXt output size
+        super().__init__(observation_space, features_dim=output_dim)
+        # Load pretrained ConvNeXt model
+        self.convnext = convnext_base(pretrained=True)
+        self.convnext.classifier = torch.nn.Identity()  # Remove classification layer
+
+        # Freeze ConvNeXt parameters = Dont train them
+        for param in self.convnext.parameters():
+            param.requires_grad = False
+            
+        # Define ImageNet mean and std for normalization
+        self.mean = torch.tensor([0.485, 0.456, 0.406], dtype=torch.float32).view(1, 3, 1, 1)
+        self.std = torch.tensor([0.229, 0.224, 0.225], dtype=torch.float32).view(1, 3, 1, 1)
+        
+        
+    def forward(self, observations):
+        try:
+            observations = observations["top"]
+        except:
+            observations = observations
+        # Step 1: Convert NumPy array to tensor (if necessary)
+        if isinstance(observations, np.ndarray):
+            observations = torch.tensor(observations, dtype=torch.float32)
+
+        # Step 2: Permute to (N, C, H, W) format if needed
+        if observations.ndim == 3 and observations.shape[1] != 3:
+            observations = observations.permute(2, 0, 1)
+            observations = observations.unsqueeze(0)
+
+        # Step 3: Resize to (224, 224) using bilinear interpolation
+        observations = F.interpolate(observations, size=(224, 224), mode="bilinear", align_corners=False)
+
+        # Step 4: Normalize using ImageNet mean and std
+        observations = (observations / 255.0 - self.mean.to(observations.device)) / self.std.to(observations.device)
+        #print("swaping to cuda_____________")
+        # step 4.5: move from cpu to cuda
+        device = next(self.convnext.parameters()).device
+        observations = observations.to(device)
+        #print("passing into convnext_____________")
+        # Step 5: Pass through ConvNeXt
+        out = self.convnext(observations)
+        #print("out shape_____________", out.shape)
+        
+        # Step 6: Squeeze and convert to NumPy
+        feature_vector = out.squeeze().detach().cpu().numpy()  # Shape [1024]
+
+        # Step 7: Wrap in a dictionary
+        return {"top": feature_vector}
+
+class AlohaEnv(gym.Env):
+    # TODO(aliberts): add "human" render_mode
+    metadata = {"render_modes": ["rgb_array"], "render_fps": 50}
+
+    def __init__(
+        self,
+        task,
+        obs_type="features",#"pixels", #"pixels_agent_pos",
+        render_mode="rgb_array",
+        observation_width=640,
+        observation_height=480,
+        visualization_width=640,
+        visualization_height=480,
+        feature_extractor = ConvNeXtFeatureExtractor(observation_space=None),
+
+    ):
+        super().__init__()
+        print("running AlohaEnv init")
+        self.task = task
+        self.obs_type = obs_type
+        self.render_mode = render_mode
+        self.observation_width = observation_width
+        self.observation_height = observation_height
+        self.visualization_width = visualization_width
+        self.visualization_height = visualization_height
+        self.feature_extractor = feature_extractor.to("cuda")
+        
+        self._env = self._make_env_task(self.task)
+        self.last_action = None
+        self.speed_limit = 0.1 # m/s
+        
+        if self.obs_type == "state":
+            raise NotImplementedError()
+            self.observation_space = spaces.Box(
+                low=np.array([0] * len(JOINTS)),  # ???
+                high=np.array([255] * len(JOINTS)),  # ???
+                dtype=np.float64,
+            )
+        elif self.obs_type == "pixels":
+            self.observation_space = spaces.Dict(
+                {
+                    "top": spaces.Box(
+                        low=0,
+                        high=255,
+                        shape=(self.observation_height, self.observation_width, 3),
+                        dtype=np.uint8,
+                    )
+                }
+            )
+        elif self.obs_type == "features":
+            self.observation_space = spaces.Dict(
+                {
+                    "top": spaces.Box(
+                        low=-np.inf,
+                        high=np.inf,
+                        shape=(1024,),
+                        dtype=np.float32,
+                    )
+                }
+            )
+        elif self.obs_type == "pixels_agent_pos":
+            self.observation_space = spaces.Dict(
+                {
+                    "pixels": spaces.Dict(
+                        {
+                            "top": spaces.Box(
+                                low=0,
+                                high=255,
+                                shape=(self.observation_height, self.observation_width, 3),
+                                dtype=np.uint8,
+                            )
+                        }
+                    ),
+                    "agent_pos": spaces.Box(
+                        low=-1000.0,
+                        high=1000.0,
+                        shape=(len(JOINTS),),
+                        dtype=np.float64,
+                    ),
+                }
+            )
+
+        self.action_space = spaces.Box(low=-1, high=1, shape=(len(ACTIONS),), dtype=np.float32)
+
+    def render(self):
+        return self._render(visualize=True)
+
+    def _render(self, visualize=False):
+        assert self.render_mode == "rgb_array"
+        width, height = (
+            (self.visualization_width, self.visualization_height)
+            if visualize
+            else (self.observation_width, self.observation_height)
+        )
+        # if mode in ["visualize", "human"]:
+        #     height, width = self.visualize_height, self.visualize_width
+        # elif mode == "rgb_array":
+        #     height, width = self.observation_height, self.observation_width
+        # else:
+        #     raise ValueError(mode)
+        # TODO(rcadene): render and visualizer several cameras (e.g. angle, front_close)
+        image = self._env.physics.render(height=height, width=width, camera_id="top")
+        return image
+
+    def _make_env_task(self, task_name):
+        # time limit is controlled by StepCounter in env factory
+        time_limit = float("inf")
+
+        if task_name == "transfer_cube":
+            xml_path = ASSETS_DIR / "bimanual_viperx_transfer_cube.xml"
+            physics = mujoco.Physics.from_xml_path(str(xml_path))
+            task = TransferCubeTask()
+        elif task_name == "insertion":
+            xml_path = ASSETS_DIR / "bimanual_viperx_insertion.xml"
+            physics = mujoco.Physics.from_xml_path(str(xml_path))
+            task = InsertionTask()
+        elif task_name == "end_effector_transfer_cube":
+            raise NotImplementedError()
+            xml_path = ASSETS_DIR / "bimanual_viperx_end_effector_transfer_cube.xml"
+            physics = mujoco.Physics.from_xml_path(str(xml_path))
+            task = TransferCubeEndEffectorTask()
+        elif task_name == "end_effector_insertion":
+            raise NotImplementedError()
+            xml_path = ASSETS_DIR / "bimanual_viperx_end_effector_insertion.xml"
+            physics = mujoco.Physics.from_xml_path(str(xml_path))
+            task = InsertionEndEffectorTask()
+        else:
+            raise NotImplementedError(task_name)
+
+        env = control.Environment(
+            physics, task, time_limit, control_timestep=DT, n_sub_steps=None, flat_observation=False
+        )
+        return env
+
+    def _format_raw_obs(self, raw_obs):
+        if self.obs_type == "state":
+            raise NotImplementedError()
+        elif self.obs_type == "pixels":
+            obs = {"top": raw_obs["images"]["top"].copy()}
+        elif self.obs_type == "pixels_agent_pos":
+            obs = {
+                "pixels": {"top": raw_obs["images"]["top"].copy()},
+                "agent_pos": raw_obs["qpos"],
+            }
+        elif self.obs_type == "features":
+            obs = {"top": raw_obs["images"]["top"].copy()}["top"]
+            obs = self.feature_extractor.forward(obs)
+        return obs
+
+    def reset(self, seed=None, options=None):
+        super().reset(seed=seed)
+
+        # TODO(rcadene): how to seed the env?
+        if seed is not None:
+            self._env.task.random.seed(seed)
+            self._env.task._random = np.random.RandomState(seed)
+
+        # TODO(rcadene): do not use global variable for this
+        if self.task == "transfer_cube":
+            BOX_POSE[0] = sample_box_pose(seed)  # used in sim reset
+        elif self.task == "insertion":
+            BOX_POSE[0] = np.concatenate(sample_insertion_pose(seed))  # used in sim reset
+        else:
+            raise ValueError(self.task)
+
+        raw_obs = self._env.reset()
+
+        observation = self._format_raw_obs(raw_obs.observation)
+        
+
+        info = {"is_success": False}
+        return observation, info
+
+    def clip_speed(self, action):
+        delta = action - self.last_action if self.last_action is not None else 0
+        delta = np.clip(delta, -self.speed_limit, self.speed_limit)
+        action = self.last_action + delta if self.last_action is not None else action
+        self.last_action = action
+        return action
+                       
+    def step(self, action):
+        assert action.ndim == 1
+        # TODO(rcadene): add info["is_success"] and info["success"] ?
+        
+        # speed limit if wanted
+        action = self.clip_speed(action)
+        
+        _, reward, _, raw_obs = self._env.step(action)
+
+        # TODO(rcadene): add an enum
+        terminated = is_success = reward == 4
+
+        info = {"is_success": is_success}
+
+        observation = self._format_raw_obs(raw_obs)
+
+        truncated = False
+        return observation, reward, terminated, truncated, info
+
+    def close(self):
+        pass

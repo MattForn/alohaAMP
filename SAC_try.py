@@ -6,6 +6,7 @@ import gym_aloha
 import stable_baselines3
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 from stable_baselines3.common.callbacks import CheckpointCallback
+from stable_baselines3.common.env_util import make_vec_env
 from torchvision.transforms import Compose, Normalize, ToTensor, Resize
 import torch
 import torch.nn.functional as F
@@ -21,51 +22,70 @@ from stable_baselines3.common.type_aliases import Schedule
 from typing import Any, Dict, List, Optional, Type, Union
 
 
-env = gym.make("gym_aloha/AlohaInsertion-features-v0")
+#env = gym.make("gym_aloha/AlohaInsertion-features-v0")
+env = make_vec_env("gym_aloha/AlohaInsertion-features-v0", n_envs=4)
 
-observation, info = env.reset()
+#observation, info = env.reset()
 
 batch_size = 256
+verbose = 1
+load_saved_model = True
+load_saved_replay_buffer = False
+#TODO: the model cant use the saved Buffer if more than one env's are used
+
 #load the last saved model in models with the graetest amounts of steps
-try:
-    #find the last saved model
-    print('trying to load a model')
-    directory = "models/*"
-    list_of_files = glob.glob(directory)
-    list_of_files_zip = [file for file in list_of_files if file.endswith('.zip')]
-    list_of_files_pkl = [file for file in list_of_files if file.endswith('.pkl')]
-    latest_zip_file = max(list_of_files_zip, key=os.path.getctime)
-    latest_pkl_file = max(list_of_files_pkl, key=os.path.getctime)
-    model = stable_baselines3.SAC.load(latest_zip_file, env=env, verbose=1)
-    print('------- successfully loaded Model -------')
-        
-    #chainge batch size of the model
-    model.batch_size = batch_size
-except:
-    print('------- can not loaded Model -------')
-    model = stable_baselines3.SAC("MultiInputPolicy", env, verbose=1, buffer_size=2**21, batch_size=batch_size)
+if load_saved_model:
+    try:
+        #find the last saved model
+        directory = "models/*"
+        list_of_files = glob.glob(directory)
+        list_of_files_zip = [file for file in list_of_files if file.endswith('.zip')]
+        list_of_files_pkl = [file for file in list_of_files if file.endswith('.pkl')]
+        latest_zip_file = max(list_of_files_zip, key=os.path.getctime)
+        latest_pkl_file = max(list_of_files_pkl, key=os.path.getctime)
+        latest_zip_file = max(list_of_files_zip, key=os.path.getctime)
+        print(f"trying to load a model: {latest_zip_file}")
+        model = stable_baselines3.SAC.load(latest_zip_file, env=env, verbose=1)
+        print('------- successfully loaded Model -------')
+            
+        #chainge batch size of the model
+        model.batch_size = batch_size
+        model.verbose = verbose
+        model.device="cuda" if torch.cuda.is_available() else "cpu"
+    except:
+        print('------- can not loaded Model -------')
+        model = stable_baselines3.SAC("MultiInputPolicy", 
+                                      env, 
+                                      verbose=verbose, 
+                                      buffer_size=2**21,
+                                      batch_size=batch_size,
+                                      device="cuda")
 
-try:
-
-    # Load the replay buffer
-    if os.path.exists(latest_pkl_file):
-        print("trying to load replay buffer")
-        with open(latest_pkl_file, 'rb') as f:
-            model.load_replay_buffer(f)
-        print('------- successfully loaded Replay Buffer -------')
-    else:
-        print('------- Replay Buffer not found -------')
-except Exception as e:
-        print('------- cant load Replay Buffer -------')
-        print(e)
+if load_saved_replay_buffer:
+    try:
+        # Load the replay buffer
+        if os.path.exists(latest_pkl_file):
+            print(f"trying to load replay buffer: {latest_pkl_file}")
+            with open(latest_pkl_file, 'rb') as f:
+                model.load_replay_buffer(f)
+            print('------- successfully loaded Replay Buffer -------')
+        else:
+            print('------- Replay Buffer not found -------')
+    except Exception as e:
+            print('------- cant load Replay Buffer -------')
+            print(e)
     
     
 
 # model.learn(total_timesteps=10000, callback=CheckpointCallback(save_freq=1000, save_path='./models/', name_prefix='sac_ConvNext_aloha'))
 # Custom callback to catch errors during learning
 class ErrorCatchingCallback(CheckpointCallback):
-    def __init__(self, save_freq: int, save_path: str, name_prefix: str, save_replay_buffer=True, del_old_checkpoints=True):
-        super().__init__(save_freq, save_path, name_prefix, save_replay_buffer, del_old_checkpoints=del_old_checkpoints)
+    def __init__(self, save_freq: int, save_path: str,
+                 name_prefix: str, save_replay_buffer=True,
+                 del_old_checkpoints=True):
+        super().__init__(save_freq, save_path, 
+                         name_prefix, save_replay_buffer, 
+                         del_old_checkpoints=del_old_checkpoints)
 
     def _on_step(self) -> bool:
         try:
@@ -85,7 +105,7 @@ ecc = ErrorCatchingCallback(save_freq=10000, save_path='./models/',
                                                 save_replay_buffer=True,
                                                 del_old_checkpoints=True)
 print("starting to learn")
-model.learn(total_timesteps=1000000, callback=ecc)
+model.learn(total_timesteps=10000000, callback=ecc)
 # save the model
 model.save("sac_ConvNext_aloha")
 
