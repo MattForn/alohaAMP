@@ -145,7 +145,7 @@ try:
                 return False
 
     # Use the custom callback
-    ecc = ErrorCatchingCallback(save_freq=save_freq, save_path='./models/',
+    ecc = ErrorCatching_Wandb_Callback(save_freq=save_freq, save_path='./models/',
                                                     name_prefix='sac_ConvNext_aloha',
                                                     save_replay_buffer=True,
                                                     del_old_checkpoints=False)
