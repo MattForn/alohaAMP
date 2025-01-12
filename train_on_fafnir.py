@@ -11,6 +11,8 @@ os.environ['DISPLAY'] = ':{}'.format(vdisplay.new_display)
 # Set up EGL for headless rendering
 os.environ['MUJOCO_GL'] = 'egl'
 
+import wandb
+from stable_baselines3.common.logger import HParam
 import gym_aloha.constants
 import imageio
 import gymnasium as gym
@@ -33,6 +35,18 @@ from gymnasium import spaces
 from stable_baselines3.common.type_aliases import Schedule
 from typing import Any, Dict, List, Optional, Type, Union
 
+# Initialize W&B project
+wandb.init(
+    project="aloha-insertion",  # Replace with your project name
+    config={
+        "algorithm": "SAC",
+        "env": "AlohaInsertion-features-v0",
+        "batch_size": batch_size,
+        "buffer_size": buffer_size,
+        "learning_timesteps": total_learning_timesteps,
+    }
+)
+
 try:    
     #env = gym.make("gym_aloha/AlohaInsertion-features-v0")
     env = make_vec_env("gym_aloha/AlohaInsertion-features-v0", n_envs=4)
@@ -40,7 +54,7 @@ try:
     #observation, info = env.reset()
     
     batch_size = 256
-    verbose = 1
+    verbose = 0
     buffer_size = 2**22
     load_saved_model = True
     load_saved_replay_buffer = False
@@ -99,7 +113,7 @@ try:
 
 
     # Custom callback to catch errors during learning
-    class ErrorCatchingCallback(CheckpointCallback):
+    class ErrorCatching_Wandb_Callback(CheckpointCallback):
         def __init__(self, save_freq: int, save_path: str,
                     name_prefix: str, save_replay_buffer=True,
                     del_old_checkpoints=True):
@@ -109,7 +123,15 @@ try:
 
         def _on_step(self) -> bool:
             try:
-                return super()._on_step()
+                out = super()._on_step()
+                # Log training metrics to W&B
+                wandb.log({
+                    "step": self.num_timesteps,
+                    "reward": self.locals["rewards"].mean(),
+                    "episode_length": self.locals["episode_lengths"].mean(),
+                    "loss": self.locals.get("loss", 0),
+                })
+                return out
             except Exception as e:
                 
                 print("################################")
@@ -156,4 +178,5 @@ try:
 
 finally:
     # Stop Xvfb
+    print("stopping Xvfb_____BECHAUSE YOU STOPPED MEEEEEEEE!")
     vdisplay.stop()
