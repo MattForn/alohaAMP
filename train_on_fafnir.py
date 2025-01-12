@@ -119,13 +119,11 @@ try:
             super(WandbCallback, self).__init__(verbose)
 
         def _on_step(self) -> bool:
-            print(" - - - - - - - - - - - - - - - - - ")
-            print(self.locals.keys())
             # Log training metrics to W&B
             wandb.log({
                 "step": self.num_timesteps,
                 "reward": self.locals["rewards"].mean(),
-                "episode_length": self.locals["episode_lengths"].mean(),
+                #"episode_length": self.locals["episode_lengths"].mean(),
                 "loss": self.locals.get("loss", 0),
             })
             return True
