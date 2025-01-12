@@ -114,7 +114,20 @@ try:
                 print('------- cant load Replay Buffer -------')
                 print(e)
 
+    class WandbCallback(BaseCallback):
+        def __init__(self, verbose=0):
+            super(WandbCallback, self).__init__(verbose)
 
+        def _on_step(self) -> bool:
+            # Log training metrics to W&B
+            wandb.log({
+                "step": self.num_timesteps,
+                "reward": self.locals["rewards"].mean(),
+                "episode_length": self.locals["episode_lengths"].mean(),
+                "loss": self.locals.get("loss", 0),
+            })
+            return True
+    
     # Custom callback to catch errors during learning
     class ErrorCatching_Wandb_Callback(CheckpointCallback):
         def __init__(self, save_freq: int, save_path: str,
@@ -126,15 +139,7 @@ try:
 
         def _on_step(self) -> bool:
             try:
-                out = super()._on_step()
-                # Log training metrics to W&B
-                wandb.log({
-                    "step": self.num_timesteps,
-                    "reward": self.locals["rewards"].mean(),
-                    "episode_length": self.locals["episode_lengths"].mean(),
-                    "loss": self.locals.get("loss", 0),
-                })
-                return out
+                return super()._on_step()
             except Exception as e:
                 
                 print("################################")
@@ -149,11 +154,22 @@ try:
                                                     name_prefix='sac_ConvNext_aloha',
                                                     save_replay_buffer=True,
                                                     del_old_checkpoints=False)
+    wandb_callback = WandbCallback(verbose=1)
+    
     print("starting to learn")
-    model.learn(total_timesteps=total_learning_timesteps, callback=ecc)
-    # save the model
-    model.save("sac_ConvNext_aloha")
+    model.learn(total_timesteps=total_learning_timesteps, 
+                callback=[ecc, wandb_callback])
+    # Save the model and log it to W&B as an artifact
+    model_path = "model/sac_ConvNext_aloha.zip"
+    model.save(model_path)
 
+    artifact = wandb.Artifact('trained-model', type='model')
+    artifact.add_file(model_path)
+    wandb.log_artifact(artifact)
+
+    # End the W&B run at the end of the training
+    wandb.finish()
+    
     if make_video_after_learning:
         #---------------Animation----------------
         frames = []
