@@ -35,6 +35,18 @@ from gymnasium import spaces
 from stable_baselines3.common.type_aliases import Schedule
 from typing import Any, Dict, List, Optional, Type, Union
 
+# Parameters
+batch_size = 256
+verbose = 0
+buffer_size = 2**22
+load_saved_model = True
+load_saved_replay_buffer = False
+total_learning_timesteps = 10000000
+save_freq = 10000
+make_video_after_learning = False
+video_length = 100 # number of frames in the video
+
+
 # Initialize W&B project
 wandb.init(
     project="aloha-insertion",  # Replace with your project name
@@ -53,15 +65,6 @@ try:
 
     #observation, info = env.reset()
     
-    batch_size = 256
-    verbose = 0
-    buffer_size = 2**22
-    load_saved_model = True
-    load_saved_replay_buffer = False
-    total_learning_timesteps = 10000000
-    save_freq = 10000
-    make_video_after_learning = False
-    video_length = 100 # number of frames in the video
     
     #TODO: the model cant use the saved Buffer if more than one env's are used
 
