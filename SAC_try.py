@@ -137,6 +137,7 @@ for i in range(10):
         observation, info = env.reset()
         
 '''
+observation, info = env.reset()
 # loop for acting
 for i in range(100):
     # get model predicted action
