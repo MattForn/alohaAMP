@@ -20,7 +20,7 @@ import numpy as np
 import gym_aloha
 import stable_baselines3
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
-from stable_baselines3.common.callbacks import CheckpointCallback
+from stable_baselines3.common.callbacks import CheckpointCallback, BaseCallback
 from stable_baselines3.common.env_util import make_vec_env
 from torchvision.transforms import Compose, Normalize, ToTensor, Resize
 import torch
