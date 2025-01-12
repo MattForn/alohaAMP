@@ -119,11 +119,8 @@ try:
             super(WandbCallback, self).__init__(verbose)
 
         def _on_step(self) -> bool:
-            i = 0
-            for info in self.locals["infos"]:
-                i += 1
-                print(str(i)+ " - - - - - - - - - - - - - - - - - ")
-                print(info.keys())
+            print(" - - - - - - - - - - - - - - - - - ")
+            print(self.locals.keys())
             # Log training metrics to W&B
             wandb.log({
                 "step": self.num_timesteps,
