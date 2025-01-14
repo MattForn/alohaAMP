@@ -19,6 +19,7 @@ import gymnasium as gym
 import numpy as np
 import gym_aloha
 import stable_baselines3
+from stable_baselines3.common.logger import configure
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 from stable_baselines3.common.callbacks import CheckpointCallback, BaseCallback
 from stable_baselines3.common.env_util import make_vec_env
@@ -117,6 +118,9 @@ try:
                 print('------- cant load Replay Buffer -------')
                 print(e)
 
+    new_logger = configure("models/logs", ["stdout", "csv", "tensorboard"])
+    model.set_logger(new_logger)
+
     class WandbCallback(BaseCallback):
         def __init__(self, verbose=0):
             super(WandbCallback, self).__init__(verbose)
@@ -128,6 +132,11 @@ try:
                 "reward": self.locals["rewards"].mean(),
                 #"episode_length": self.locals["episode_lengths"].mean(),
                 "loss": self.locals.get("loss", 0),
+                "actor loss": self.model.logger.name_to_value["train/actor_loss"],
+                "critic loss": self.model.logger.name_to_value["train/critic_loss"],
+                "ent_coef": self.model.logger.name_to_value["train/ent_coef"],
+                "ent_coef_loss": self.model.logger.name_to_value["train/ent_coef_loss"],
+                "learning_rate": self.model.logger.name_to_value["train/learning_rate"],
             })
             return True
     
