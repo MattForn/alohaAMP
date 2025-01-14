@@ -43,8 +43,11 @@ load_saved_model = True
 load_saved_replay_buffer = False
 total_learning_timesteps = 10000000
 save_freq = 10000
+save_replay_buffer=False
+del_old_checkpoints=False
 make_video_after_learning = False
 video_length = 100 # number of frames in the video
+
 
 
 # Initialize W&B project
@@ -152,8 +155,8 @@ try:
     # Use the custom callback
     ecc = ErrorCatching_Wandb_Callback(save_freq=save_freq, save_path='./models/',
                                                     name_prefix='sac_ConvNext_aloha',
-                                                    save_replay_buffer=True,
-                                                    del_old_checkpoints=False)
+                                                    save_replay_buffer=save_replay_buffer,
+                                                    del_old_checkpoints=del_old_checkpoints)
     wandb_callback = WandbCallback(verbose=1)
     
     print("starting to learn")
@@ -197,5 +200,5 @@ try:
 
 finally:
     # Stop Xvfb
-    print("stopping Xvfb_____BECHAUSE YOU STOPPED MEEEEEEEE!")
+    print("stopping Xvfb_____BECAUSE YOU STOPPED MEEEEEEEE!")
     vdisplay.stop()
