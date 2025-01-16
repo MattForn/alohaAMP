@@ -40,12 +40,12 @@ from typing import Any, Dict, List, Optional, Type, Union
 batch_size = 256
 verbose = 0
 buffer_size = 2**22
-load_saved_model = True
+load_saved_model = False
 load_saved_replay_buffer = False
 total_learning_timesteps = 10000000
 save_freq = 10000
 save_replay_buffer=False
-del_old_checkpoints=False
+del_old_checkpoints=True
 make_video_after_learning = False
 video_length = 100 # number of frames in the video
 
@@ -96,13 +96,23 @@ try:
             load_saved_model = False
 
     if not load_saved_model:
-            print('------- creating new Model -------')
-            model = stable_baselines3.SAC("MultiInputPolicy", 
-                                        env, 
-                                        verbose=verbose, 
-                                        buffer_size=buffer_size,
-                                        batch_size=batch_size,
-                                        device="cuda")
+        print('------- creating new Model -------')
+            
+        # Berechne Target Entropy
+        action_space_dim = np.prod(env.action_space.shape)
+        target_entropy = -action_space_dim
+    
+        model = stable_baselines3.SAC("MultiInputPolicy", 
+                                    env, 
+                                    verbose=verbose, 
+                                    buffer_size=buffer_size,
+                                    batch_size=batch_size,
+                                    device="cuda",
+                                    ent_coef='auto')
+        
+        
+        # Setze die gewünschte Target Entropy
+        model.target_entropy = target_entropy
 
     if load_saved_replay_buffer:
         try:
@@ -143,8 +153,8 @@ try:
     # Custom callback to catch errors during learning
     class ErrorCatching_Wandb_Callback(CheckpointCallback):
         def __init__(self, save_freq: int, save_path: str,
-                    name_prefix: str, save_replay_buffer=True,
-                    del_old_checkpoints=True):
+                    name_prefix: str, save_replay_buffer=save_replay_buffer,
+                    del_old_checkpoints=del_old_checkpoints):
             super().__init__(save_freq, save_path, 
                             name_prefix, save_replay_buffer, 
                             del_old_checkpoints=del_old_checkpoints)

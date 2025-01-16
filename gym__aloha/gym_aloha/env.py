@@ -252,12 +252,23 @@ class AlohaEnv(gym.Env):
         self.last_action = action
         return action
                        
+    def tanH_speed(self, action):
+        # Calculate delta between current and last action
+        delta = action - self.last_action if self.last_action is not None else 0
+        # Scale delta using tanh to limit its range within [-speed_limit, speed_limit]
+        scaled_delta = np.tanh(delta / self.speed_limit) * self.speed_limit
+        # Update action by adding the scaled delta
+        action = self.last_action + scaled_delta if self.last_action is not None else action
+        # Store the last action
+        self.last_action = action
+        
     def step(self, action):
         assert action.ndim == 1
         # TODO(rcadene): add info["is_success"] and info["success"] ?
         
         # speed limit if wanted
-        action = self.clip_speed(action)
+        #action = self.clip_speed(action)
+        action = self.tanH_speed(action)
         
         _, reward, _, raw_obs = self._env.step(action)
 
