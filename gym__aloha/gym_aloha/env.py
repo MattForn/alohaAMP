@@ -261,15 +261,15 @@ class AlohaEnv(gym.Env):
         action = self.last_action + scaled_delta if self.last_action is not None else action
         # Store the last action
         self.last_action = action
+        return action
         
     def step(self, action):
         assert action.ndim == 1
         # TODO(rcadene): add info["is_success"] and info["success"] ?
         
         # speed limit if wanted
-        #action = self.clip_speed(action)
+        # action = self.clip_speed(action)
         action = self.tanH_speed(action)
-        
         _, reward, _, raw_obs = self._env.step(action)
 
         # TODO(rcadene): add an enum

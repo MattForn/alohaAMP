@@ -29,9 +29,12 @@ env = make_vec_env("gym_aloha/AlohaInsertion-features-v0", n_envs=4)
 
 #observation, info = env.reset()
 
+learning_rate = 0.0003
 batch_size = 100
 verbose = 1
+target_entropy = env.action_space.shape[0]
 buffer_size = 2**9# 2**21
+create_new_model = True
 load_saved_model = False
 load_saved_replay_buffer = False
 save_freq = 10000
@@ -44,7 +47,7 @@ video_length = 100 # number of frames in the video
 #TODO: the model cant use the saved Buffer if more than one env's are used
 
 #load the last saved model in models with the graetest amounts of steps
-if load_saved_model:
+if load_saved_model and not create_new_model:
     try:
         #find the last saved model
         directory = "models/*"
@@ -66,14 +69,16 @@ if load_saved_model:
         print('------- can not loaded Model -------')
         load_saved_model = False
         
-if not load_saved_model:
+if not load_saved_model or create_new_model:
         print('------- creating new Model -------')
         model = stable_baselines3.SAC("MultiInputPolicy", 
-                                      env, 
-                                      verbose=verbose, 
-                                      buffer_size=buffer_size,# #2**21,
-                                      batch_size=batch_size,
-                                      device="cuda")
+                                        env, 
+                                        verbose=verbose, 
+                                        learning_rate=learning_rate,
+                                        buffer_size=buffer_size,# #2**21,
+                                        batch_size=batch_size,
+                                        device="cuda",
+                                        target_entropy=target_entropy)
         
         new_logger = configure("models/logs", ["stdout", "csv", "tensorboard"])
         model.set_logger(new_logger)
@@ -96,7 +101,6 @@ if load_saved_replay_buffer:
     
     
 
-# model.learn(total_timesteps=10000, callback=CheckpointCallback(save_freq=1000, save_path='./models/', name_prefix='sac_ConvNext_aloha'))
 # Custom callback to catch errors during learning
 class ErrorCatchingCallback(CheckpointCallback):
     def __init__(self, save_freq: int, save_path: str,
@@ -105,37 +109,16 @@ class ErrorCatchingCallback(CheckpointCallback):
         super().__init__(save_freq, save_path, 
                          name_prefix, save_replay_buffer, 
                          del_old_checkpoints=del_old_checkpoints)
-        self.i=0
-
-    def _compute_actor_loss(self, policy):
-        """Compute an approximation of the actor loss using a random observation."""
-        env_obs_space = self.training_env.observation_space
-        obs_shape = env_obs_space.shape
-
-        with torch.no_grad():
-            obs = torch.rand((1,) + obs_shape).to(policy.device)
-            log_prob = policy.actor.action_dist.log_prob(policy.actor(obs))
-            actor_loss = -log_prob.mean().item()
-        return actor_loss
     
     def _on_step(self) -> bool:
         try:
-            self.i += 1
-            out = super()._on_step()
-            print(f"-----------------------Step: {self.i}")
             a_loss = self.model.logger.name_to_value["train/actor_loss"]
             c_loss = self.model.logger.name_to_value["train/critic_loss"]
             e_c = self.model.logger.name_to_value["train/ent_coef"]
             e_c_loss = self.model.logger.name_to_value["train/ent_coef_loss"]
             l_rate = self.model.logger.name_to_value["train/learning_rate"]
             
-            
-            # Access the policy network
-            #policy = self.model.policy
-            # Get the critic and actor networks
-            #actor_loss = self._compute_actor_loss(policy)
-            #pprint.pprint(actor_loss)
-            return out
+            return super()._on_step()
         except Exception as e:
             print("################################")
             if e == PhysicsError:
@@ -165,19 +148,6 @@ if make_video_after_learning:
     close_pose[2],close_pose[9] = 0.9,0.9
     close_pose[6],close_pose[13] = 0.5,0.5
 
-    '''
-    # Bring grippers into position
-    for i in range(10):
-        # interpolate between start_pose and close_pose
-        action = start_pose + (close_pose - start_pose) * i / 10
-        observation, reward, terminated, truncated, info = env.step(action)
-        image = env.render()
-        frames.append(image)
-
-        if terminated or truncated:
-            observation, info = env.reset()
-            
-    '''
     observation, info = env.reset()
     # loop for acting
     for i in range(100):
