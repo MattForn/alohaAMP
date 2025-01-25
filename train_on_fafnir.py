@@ -37,18 +37,22 @@ from stable_baselines3.common.type_aliases import Schedule
 from typing import Any, Dict, List, Optional, Type, Union
 
 # Parameters
+learning_rate = 0.0002 #0.0003
+tau = 0.005
+gamma = 0.99
 batch_size = 256
-verbose = 0
-buffer_size = 2**22
+verbose = 1
+target_entropy = 14 #Value get overwritten with: env.action_space.shape[0] 
+buffer_size = 2**21
+create_new_model = True
 load_saved_model = False
 load_saved_replay_buffer = False
-total_learning_timesteps = 10000000
-save_freq = 10000
+save_freq = 20000
+total_timesteps = 1e+8
 save_replay_buffer=False
-del_old_checkpoints=True
+del_old_checkpoints=False
 make_video_after_learning = False
 video_length = 100 # number of frames in the video
-
 
 
 # Initialize W&B project
@@ -59,21 +63,21 @@ wandb.init(
         "env": "AlohaInsertion-features-v0",
         "batch_size": batch_size,
         "buffer_size": buffer_size,
-        "learning_timesteps": total_learning_timesteps,
+        "learning_timesteps": total_timesteps,
     }
 )
 
 try:    
+    #if one env is wanted use this:
     #env = gym.make("gym_aloha/AlohaInsertion-features-v0")
+    #if more than one env is wanted use this:
     env = make_vec_env("gym_aloha/AlohaInsertion-features-v0", n_envs=4)
-
-    #observation, info = env.reset()
-    
+    target_entropy = env.action_space.shape[0]
     
     #TODO: the model cant use the saved Buffer if more than one env's are used
 
     #load the last saved model in models with the graetest amounts of steps
-    if load_saved_model:
+    if load_saved_model and not create_new_model:
         try:
             #find the last saved model
             directory = "models/*"
@@ -95,25 +99,23 @@ try:
             print('------- can not loaded Model -------')
             load_saved_model = False
 
-    if not load_saved_model:
+    if not load_saved_model or create_new_model:
         print('------- creating new Model -------')
-            
-        # Berechne Target Entropy
-        action_space_dim = np.prod(env.action_space.shape)
-        target_entropy = -action_space_dim
     
         model = stable_baselines3.SAC("MultiInputPolicy", 
-                                    env, 
-                                    verbose=verbose, 
-                                    buffer_size=buffer_size,
-                                    batch_size=batch_size,
-                                    device="cuda",
-                                    ent_coef='auto')
+                                        env, 
+                                        verbose=verbose, 
+                                        learning_rate=learning_rate,
+                                        buffer_size=buffer_size,
+                                        batch_size=batch_size,
+                                        device="cuda",
+                                        tau=tau,
+                                        gamma=gamma,
+                                        target_entropy=target_entropy)
         
-        
-        # Setze die gewünschte Target Entropy
-        model.target_entropy = target_entropy
-
+    new_logger = configure("models/logs", ["stdout", "csv", "tensorboard"])
+    model.set_logger(new_logger)
+    model.logger.name_to_value
     if load_saved_replay_buffer:
         try:
             # Load the replay buffer
@@ -128,8 +130,7 @@ try:
                 print('------- cant load Replay Buffer -------')
                 print(e)
 
-    new_logger = configure("models/logs", ["stdout", "csv", "tensorboard"])
-    model.set_logger(new_logger)
+
 
     class WandbCallback(BaseCallback):
         def __init__(self, verbose=0):
@@ -179,7 +180,7 @@ try:
     wandb_callback = WandbCallback(verbose=1)
     
     print("starting to learn")
-    model.learn(total_timesteps=total_learning_timesteps, 
+    model.learn(total_timesteps=total_timesteps, 
                 callback=[ecc, wandb_callback])
     # Save the model and log it to W&B as an artifact
     model_path = "model/sac_ConvNext_aloha.zip"

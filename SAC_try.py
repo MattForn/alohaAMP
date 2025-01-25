@@ -30,6 +30,8 @@ env = make_vec_env("gym_aloha/AlohaInsertion-features-v0", n_envs=4)
 #observation, info = env.reset()
 
 learning_rate = 0.0003
+tau = 0.005
+gamma = 0.99
 batch_size = 100
 verbose = 1
 target_entropy = env.action_space.shape[0]
@@ -70,14 +72,27 @@ if load_saved_model and not create_new_model:
         load_saved_model = False
         
 if not load_saved_model or create_new_model:
+        """    The ``net_arch`` parameter allows to specify the amount and size of the hidden layers.
+        It can be in either of the following forms:
+        1. ``dict(vf=[<list of layer sizes>], pi=[<list of layer sizes>])``: to specify the amount and size of the layers in the
+            policy and value nets individually. If it is missing any of the keys (pi or vf),
+            zero layers will be considered for that key.
+        2. ``[<list of layer sizes>]``: "shortcut" in case the amount and size of the layers
+            in the policy and value nets are the same. Same as ``dict(vf=int_list, pi=int_list)``
+            where int_list is the same for the actor and critic.
+        Usage:
+         policy_kwargs = dict(net_arch=dict(pi=[256, 256], vf=[256, 256])"""
+         
         print('------- creating new Model -------')
         model = stable_baselines3.SAC("MultiInputPolicy", 
                                         env, 
                                         verbose=verbose, 
                                         learning_rate=learning_rate,
-                                        buffer_size=buffer_size,# #2**21,
+                                        buffer_size=buffer_size,
                                         batch_size=batch_size,
                                         device="cuda",
+                                        tau=tau,
+                                        gamma=gamma,
                                         target_entropy=target_entropy)
         
         new_logger = configure("models/logs", ["stdout", "csv", "tensorboard"])
