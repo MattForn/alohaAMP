@@ -41,17 +41,17 @@ learning_rate = 0.0002 #0.0003
 tau = 0.005
 gamma = 0.99
 batch_size = 256
-verbose = 1
+verbose = 0
 target_entropy = 14 #Value get overwritten with: env.action_space.shape[0] 
 buffer_size = 2**21
 create_new_model = True
 load_saved_model = False
 load_saved_replay_buffer = False
 save_freq = 20000
-total_timesteps = 1e+8
+total_timesteps = 1e+10
 save_replay_buffer=False
-del_old_checkpoints=False
-make_video_after_learning = False
+del_old_checkpoints=True
+make_video_after_learning = True
 video_length = 100 # number of frames in the video
 
 
@@ -88,7 +88,7 @@ try:
             latest_pkl_file = max(list_of_files_pkl, key=os.path.getctime)
             latest_zip_file = max(list_of_files_zip, key=os.path.getctime)
             print(f"trying to load a model: {latest_zip_file}")
-            model = stable_baselines3.SAC.load(latest_zip_file, env=env, verbose=1)
+            model = stable_baselines3.SAC.load(latest_zip_file, env=env, verbose=verbose)
             print('------- successfully loaded Model -------')
                 
             #chainge batch size of the model
@@ -133,7 +133,7 @@ try:
 
 
     class WandbCallback(BaseCallback):
-        def __init__(self, verbose=0):
+        def __init__(self, verbose=verbose):
             super(WandbCallback, self).__init__(verbose)
 
         def _on_step(self) -> bool:
