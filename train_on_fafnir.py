@@ -42,10 +42,10 @@ tau = 0.005
 gamma = 0.99
 batch_size = 256
 verbose = 0
-target_entropy = 14 #Value get overwritten with: env.action_space.shape[0] 
+target_entropy = -14 #Value get overwritten with: -env.action_space.shape[0] 
 buffer_size = 2**21
-create_new_model = True
-load_saved_model = False
+create_new_model = False
+load_saved_model = True
 load_saved_replay_buffer = False
 save_freq = 20000
 total_timesteps = 1e+10
@@ -72,7 +72,7 @@ try:
     #env = gym.make("gym_aloha/AlohaInsertion-features-v0")
     #if more than one env is wanted use this:
     env = make_vec_env("gym_aloha/AlohaInsertion-features-v0", n_envs=4)
-    target_entropy = env.action_space.shape[0]
+    target_entropy = -env.action_space.shape[0]
     
     #TODO: the model cant use the saved Buffer if more than one env's are used
 

@@ -98,8 +98,6 @@ if not load_saved_model or create_new_model:
         new_logger = configure("models/logs", ["stdout", "csv", "tensorboard"])
         model.set_logger(new_logger)
 
-
-
 if load_saved_replay_buffer:
     try:
         # Load the replay buffer
@@ -114,7 +112,7 @@ if load_saved_replay_buffer:
             print('------- cant load Replay Buffer -------')
             print(e)
     
-    
+model.actor
 
 # Custom callback to catch errors during learning
 class ErrorCatchingCallback(CheckpointCallback):
