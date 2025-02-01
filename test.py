@@ -42,9 +42,5 @@ for i in range(100):
         observation, info = env.reset()
 
 env.close()
-imageio.mimsave("sac_test1.mp4", np.stack(frames), fps=25)
+imageio.mimsave("videos/sac_test1.mp4", np.stack(frames), fps=25)
 
-
-# Define the environment function
-def env_fn():
-    return gym.make("gym_aloha/AlohaInsertion-v0")
