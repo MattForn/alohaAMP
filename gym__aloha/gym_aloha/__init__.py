@@ -27,7 +27,7 @@ register(
     # Even after seeding, the rendered observations are slightly different,
     # so we set `nondeterministic=True` to pass `check_env` tests
     nondeterministic=True,
-    kwargs={"obs_type": "pixels", "task": "transfer_cube"},
+    kwargs={"obs_type": "pixels", "task": "move"},
 )
 
 register(

@@ -151,31 +151,31 @@ try:
             return True
     
     # Custom callback to catch errors during learning
-    class ErrorCatching_Wandb_Callback(CheckpointCallback):
-        def __init__(self, save_freq: int, save_path: str,
-                    name_prefix: str, save_replay_buffer=save_replay_buffer,
-                    del_old_checkpoints=del_old_checkpoints):
-            super().__init__(save_freq, save_path, 
-                            name_prefix, save_replay_buffer, 
-                            del_old_checkpoints=del_old_checkpoints)
+    # class ErrorCatching_Wandb_Callback(CheckpointCallback):
+    #     def __init__(self, save_freq: int, save_path: str,
+    #                 name_prefix: str, save_replay_buffer=save_replay_buffer,
+    #                 del_old_checkpoints=del_old_checkpoints):
+    #         super().__init__(save_freq, save_path, 
+    #                         name_prefix, save_replay_buffer, 
+    #                         del_old_checkpoints=del_old_checkpoints)
 
-        def _on_step(self) -> bool:
-            try:
-                return super()._on_step()
-            except Exception as e:
+    #     def _on_step(self) -> bool:
+    #         try:
+    #             return super()._on_step()
+    #         except Exception as e:
                 
-                print("################################")
-                if e == PhysicsError:
-                    print(f"PhysicsError: {e}")
-                else:
-                    print(f"Error during learning: {e}")
-                return False
+    #             print("################################")
+    #             if e == PhysicsError:
+    #                 print(f"PhysicsError: {e}")
+    #             else:
+    #                 print(f"Error during learning: {e}")
+    #             return False
 
-    # Use the custom callback
-    ecc = ErrorCatching_Wandb_Callback(save_freq=save_freq, save_path='./models/',
-                                                    name_prefix='sac_ConvNext_aloha',
-                                                    save_replay_buffer=save_replay_buffer,
-                                                    del_old_checkpoints=del_old_checkpoints)
+    # # Use the custom callback
+    # ecc = ErrorCatching_Wandb_Callback(save_freq=save_freq, save_path='./models/',
+    #                                                 name_prefix='sac_ConvNext_aloha',
+    #                                                 save_replay_buffer=save_replay_buffer,
+    #                                                 del_old_checkpoints=del_old_checkpoints)
     wandb_callback = WandbCallback(verbose=1)
     
     print("starting to learn")
