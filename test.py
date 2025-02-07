@@ -4,7 +4,7 @@ import numpy as np
 import gym_aloha
 import gym_aloha.constants
 
-env = gym.make("gym_aloha/AlohaInsertion-v0")
+env = gym.make("gym_aloha/AlohaSimple-v0")
 observation, info = env.reset()
 frames = []
 
@@ -47,4 +47,4 @@ imageio.mimsave("sac_test1.mp4", np.stack(frames), fps=25)
 
 # Define the environment function
 def env_fn():
-    return gym.make("gym_aloha/AlohaInsertion-v0")
+    return gym.make("gym_aloha/AlohaSimple-v0")
