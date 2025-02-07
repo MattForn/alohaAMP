@@ -53,10 +53,10 @@ video_length = 100 # number of frames in the video
 
 # Initialize W&B project
 wandb.init(
-    project="aloha-insertion",  # Replace with your project name
+    project="aloha-simple",  # Replace with your project name
     config={
         "algorithm": "SAC",
-        "env": "AlohaInsertion-features-v0",
+        "env": "AlohaSimple",
         "batch_size": batch_size,
         "buffer_size": buffer_size,
         "learning_timesteps": total_learning_timesteps,
@@ -65,12 +65,7 @@ wandb.init(
 
 try:    
     #env = gym.make("gym_aloha/AlohaInsertion-features-v0")
-    env = make_vec_env("gym_aloha/AlohaInsertion-features-v0", n_envs=4)
-
-    #observation, info = env.reset()
-    
-    
-    #TODO: the model cant use the saved Buffer if more than one env's are used
+    env = make_vec_env("gym_aloha/AlohaSimple", n_envs=4)
 
     #load the last saved model in models with the graetest amounts of steps
     if load_saved_model:

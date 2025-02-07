@@ -236,3 +236,41 @@ class InsertionTask(BimanualViperXTask):
         if pin_touched:  # successful insertion
             reward = 4
         return reward
+    
+class SimpleTask(BimanualViperXTask):
+    def __init__(self, random=None):
+        super().__init__(random=random)
+        self.max_reward = 4
+
+    def initialize_episode(self, physics):
+        """Sets the state of the environment at the start of each episode."""
+
+        # reset qpos, control and box position
+        with physics.reset_context():
+            physics.named.data.qpos[:16] = START_ARM_POSE
+            np.copyto(physics.data.ctrl, START_ARM_POSE)
+            assert BOX_POSE[0] is not None
+            physics.named.data.qpos[-7:] = BOX_POSE[0]
+            # print(f"{BOX_POSE=}")
+        super().initialize_episode(physics)
+
+    @staticmethod
+    def get_env_state(physics):
+        env_state = physics.data.qpos.copy()[16:]
+        return env_state
+
+    def get_reward(self, physics):
+
+        # TODO: Implement reward for straightening the left arm upwards
+
+        reward = 0
+        if physics.data.qpos[0] > 0.5:
+            reward = 1
+        if physics.data.qpos[0] > 0.7:
+            reward = 2
+        if physics.data.qpos[0] > 0.9:
+            reward = 3
+        if physics.data.qpos[0] > 1.0:
+            reward = 4
+
+        return reward

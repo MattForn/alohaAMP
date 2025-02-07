@@ -14,7 +14,7 @@ from gym_aloha.constants import (
     DT,
     JOINTS,
 )
-from gym_aloha.tasks.sim import BOX_POSE, InsertionTask, TransferCubeTask
+from gym_aloha.tasks.sim import BOX_POSE, InsertionTask, TransferCubeTask, SimpleTask
 from gym_aloha.tasks.sim_end_effector import (
     InsertionEndEffectorTask,
     TransferCubeEndEffectorTask,
@@ -79,7 +79,7 @@ class AlohaEnv(gym.Env):
     def __init__(
         self,
         task,
-        obs_type="pixels",#"pixels", #"pixels_agent_pos",
+        obs_type="pixels_agent_pos",#"pixels", #"pixels_agent_pos",
         render_mode="rgb_array",
         observation_width=640,
         observation_height=480,
@@ -184,6 +184,10 @@ class AlohaEnv(gym.Env):
             xml_path = ASSETS_DIR / "bimanual_viperx_transfer_cube.xml"
             physics = mujoco.Physics.from_xml_path(str(xml_path))
             task = TransferCubeTask()
+        elif task_name == "simple":
+            xml_path = ASSETS_DIR / "bimanual_viperx_transfer_cube.xml"
+            physics = mujoco.Physics.from_xml_path(str(xml_path))
+            task = SimpleTask()
         elif task_name == "insertion":
             xml_path = ASSETS_DIR / "bimanual_viperx_insertion.xml"
             physics = mujoco.Physics.from_xml_path(str(xml_path))
