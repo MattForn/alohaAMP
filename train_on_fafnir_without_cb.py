@@ -26,7 +26,6 @@ from stable_baselines3.common.env_util import make_vec_env
 from torchvision.transforms import Compose, Normalize, ToTensor, Resize
 import torch
 import torch.nn.functional as F
-from torchvision.models import convnext_base
 from dm_control.rl.control import PhysicsError
 import glob
 
@@ -64,7 +63,7 @@ wandb.init(
 )
 
 try:    
-    env = gym.make("gym_aloha/AlohaInsertion-features-v0")
+    env = gym.make("gym_aloha/AlohaSimple")
     #env = make_vec_env("gym_aloha/AlohaSimple", n_envs=4)
 
     #load the last saved model in models with the graetest amounts of steps
@@ -145,39 +144,13 @@ try:
             })
             return True
     
-    # Custom callback to catch errors during learning
-    # class ErrorCatching_Wandb_Callback(CheckpointCallback):
-    #     def __init__(self, save_freq: int, save_path: str,
-    #                 name_prefix: str, save_replay_buffer=save_replay_buffer,
-    #                 del_old_checkpoints=del_old_checkpoints):
-    #         super().__init__(save_freq, save_path, 
-    #                         name_prefix, save_replay_buffer, 
-    #                         del_old_checkpoints=del_old_checkpoints)
-
-    #     def _on_step(self) -> bool:
-    #         try:
-    #             return super()._on_step()
-    #         except Exception as e:
-                
-    #             print("################################")
-    #             if e == PhysicsError:
-    #                 print(f"PhysicsError: {e}")
-    #             else:
-    #                 print(f"Error during learning: {e}")
-    #             return False
-
-    # # Use the custom callback
-    # ecc = ErrorCatching_Wandb_Callback(save_freq=save_freq, save_path='./models/',
-    #                                                 name_prefix='sac_ConvNext_aloha',
-    #                                                 save_replay_buffer=save_replay_buffer,
-    #                                                 del_old_checkpoints=del_old_checkpoints)
     wandb_callback = WandbCallback(verbose=1)
     
     print("starting to learn")
     model.learn(total_timesteps=total_learning_timesteps, 
                 callback=[wandb_callback])
     # Save the model and log it to W&B as an artifact
-    model_path = "model/sac_ConvNext_aloha.zip"
+    model_path = "model/sac_alohaSimple.zip"
     model.save(model_path)
 
     artifact = wandb.Artifact('trained-model', type='model')
