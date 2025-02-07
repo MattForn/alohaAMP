@@ -156,8 +156,8 @@ try:
                     name_prefix: str, save_replay_buffer=save_replay_buffer,
                     del_old_checkpoints=del_old_checkpoints):
             super().__init__(save_freq, save_path, 
-                            name_prefix, save_replay_buffer, 
-                            del_old_checkpoints=del_old_checkpoints)
+                            name_prefix, save_replay_buffer)
+            self.del_old_checkpoints = del_old_checkpoints
 
         def _on_step(self) -> bool:
             try:
