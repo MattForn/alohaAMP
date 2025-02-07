@@ -25,7 +25,7 @@ register(
     entry_point="gym_aloha.env:AlohaEnv",
     max_episode_steps=300,
     nondeterministic=True,
-    kwargs={"obs_type": "pixels", "task": "simple"},
+    kwargs={"obs_type": "pixels", "task": "transfer_cube"},
 )
 
 register(
