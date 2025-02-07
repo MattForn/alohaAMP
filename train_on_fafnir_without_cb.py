@@ -38,7 +38,7 @@ from typing import Any, Dict, List, Optional, Type, Union
 # Parameters
 batch_size = 256
 verbose = 0
-buffer_size = 2**12
+buffer_size = 2**10
 load_saved_model = False
 load_saved_replay_buffer = False
 total_learning_timesteps = 10000000
