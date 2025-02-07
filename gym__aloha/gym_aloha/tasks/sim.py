@@ -240,7 +240,7 @@ class InsertionTask(BimanualViperXTask):
 class SimpleTask(BimanualViperXTask):
     def __init__(self, random=None):
         super().__init__(random=random)
-        self.max_reward = 15
+        self.max_reward = 60
 
     def initialize_episode(self, physics):
         """Sets the state of the environment at the start of each episode."""
@@ -263,40 +263,23 @@ class SimpleTask(BimanualViperXTask):
 
         reward = 0
 
-        if physics.data.qpos[1] < 0.3 and physics.data.qpos[1] > -0.3:
-            reward += 1
+        # for every joint within the left arm
+        for i in range(6):
+            # if the joint is within the range of 0.1
+            if physics.data.qpos[i] < 0.3 and physics.data.qpos[i] > -0.3:
+                # add 1 to the reward
+                reward += 1
 
-        if physics.data.qpos[1] < 0.2 and physics.data.qpos[1] > -0.2:
-            reward += 1
-        
-        if physics.data.qpos[1] < 0.1 and physics.data.qpos[1] > -0.1:
-            reward += 1
+        for i in range(6):
+            # if the joint is within the range of 0.1
+            if physics.data.qpos[i] < 0.1 and physics.data.qpos[i] > -0.1:
+                # add 1 to the reward
+                reward += 1
 
-        if physics.data.qpos[2] < 0.3 and physics.data.qpos[2] > -0.3:
-            reward += 1
-
-        if physics.data.qpos[2] < 0.2 and physics.data.qpos[2] > -0.2:
-            reward += 1
-        
-        if physics.data.qpos[2] < 0.1 and physics.data.qpos[2] > -0.1:
-            reward += 1
-
-        if physics.data.qpos[4] < 0.3 and physics.data.qpos[4] > -0.3:
-            reward += 1
-
-        if physics.data.qpos[4] < 0.2 and physics.data.qpos[4] > -0.2:
-            reward += 1
-        
-        if physics.data.qpos[4] < 0.1 and physics.data.qpos[4] > -0.1:
-            reward += 1
-
-        if physics.data.qpos[1] == 0.0:
-            reward += 2
-
-        if physics.data.qpos[2] == 0.0:
-            reward += 2
-
-        if physics.data.qpos[4] == 0.0:
-            reward += 2
+        for i in range(6):
+            # if the joint value equals 0
+            if physics.data.qpos[i] == 0:
+                # add 1 to the reward
+                reward += 8
 
         return reward
