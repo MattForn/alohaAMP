@@ -36,7 +36,7 @@ from stable_baselines3.common.type_aliases import Schedule
 from typing import Any, Dict, List, Optional, Type, Union
 
 # Parameters
-batch_size = 256
+batch_size = 128
 verbose = 0
 buffer_size = 2**10
 load_saved_model = False
