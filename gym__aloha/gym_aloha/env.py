@@ -85,7 +85,7 @@ class AlohaEnv(gym.Env):
         observation_height=480,
         visualization_width=640,
         visualization_height=480,
-        feature_extractor = ConvNeXtFeatureExtractor(observation_space=None),
+        #feature_extractor = ConvNeXtFeatureExtractor(observation_space=None),
 
     ):
         super().__init__()
@@ -97,7 +97,7 @@ class AlohaEnv(gym.Env):
         self.observation_height = observation_height
         self.visualization_width = visualization_width
         self.visualization_height = visualization_height
-        self.feature_extractor = feature_extractor.to("cuda")
+        #self.feature_extractor = feature_extractor.to("cuda")
         
         self._env = self._make_env_task(self.task)
         self.last_action = None
@@ -222,7 +222,7 @@ class AlohaEnv(gym.Env):
             }
         elif self.obs_type == "features":
             obs = {"top": raw_obs["images"]["top"].copy()}["top"]
-            obs = self.feature_extractor.forward(obs)
+            #obs = self.feature_extractor.forward(obs)
         return obs
 
     def reset(self, seed=None, options=None):
