@@ -45,7 +45,7 @@ total_learning_timesteps = 10000000
 save_freq = 10000
 save_replay_buffer=False
 del_old_checkpoints=True
-make_video_after_learning = False
+make_video_after_learning = True
 video_length = 100 # number of frames in the video
 
 
