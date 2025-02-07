@@ -282,4 +282,6 @@ class SimpleTask(BimanualViperXTask):
                 # add 1 to the reward
                 reward += 8
 
+        # print current reward
+        print("reward: ", reward)
         return reward
