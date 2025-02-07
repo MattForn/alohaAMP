@@ -113,8 +113,8 @@ start_pose = np.delete(start_pose, [8, 15])
 
 # Move the Grippers closer to each other
 close_pose = start_pose.copy()
-close_pose[0:7] = [0-0, -0.4, 0.9, 0.0, 0.5, 0.0 , 1.5]
-close_pose[7:14] = [0-0, -0.4, 0.9, 0.0, 0.5, 0.0 , 1.5]
+close_pose[0:7] = [0.0, -0.4, 0.9, 0.0, 0.5, 0.0 , 1.5]
+close_pose[7:14] = [0.0, -0.4, 0.9, 0.0, 0.5, 0.0 , 1.5]
 # close_pose[1],close_pose[8] = -0.4,-0.3
 # close_pose[2],close_pose[9] = 0.9,1.3
 # close_pose[4] = 0.5

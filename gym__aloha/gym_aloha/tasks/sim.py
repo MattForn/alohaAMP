@@ -240,7 +240,7 @@ class InsertionTask(BimanualViperXTask):
 class SimpleTask(BimanualViperXTask):
     def __init__(self, random=None):
         super().__init__(random=random)
-        self.max_reward = 4
+        self.max_reward = 6
 
     def initialize_episode(self, physics):
         """Sets the state of the environment at the start of each episode."""
@@ -261,16 +261,33 @@ class SimpleTask(BimanualViperXTask):
 
     def get_reward(self, physics):
 
-        # TODO: Implement reward for straightening the left arm upwards
-
         reward = 0
-        if physics.data.qpos[0] > 0.5:
-            reward = 1
-        if physics.data.qpos[0] > 0.7:
-            reward = 2
-        if physics.data.qpos[0] > 0.9:
-            reward = 3
-        if physics.data.qpos[0] > 1.0:
-            reward = 4
+        
+        if physics.data.qpos[1] < 0.3 and physics.data.qpos[1] > -0.3:
+            reward += 1
+
+        if physics.data.qpos[1] < 0.2 and physics.data.qpos[1] > -0.2:
+            reward += 1
+        
+        if physics.data.qpos[1] < 0.1 and physics.data.qpos[1] > -0.1:
+            reward += 1
+
+        if physics.data.qpos[2] < 0.3 and physics.data.qpos[2] > -0.3:
+            reward += 1
+
+        if physics.data.qpos[2] < 0.2 and physics.data.qpos[2] > -0.2:
+            reward += 1
+        
+        if physics.data.qpos[2] < 0.1 and physics.data.qpos[2] > -0.1:
+            reward += 1
+
+        if physics.data.qpos[4] < 0.3 and physics.data.qpos[4] > -0.3:
+            reward += 1
+
+        if physics.data.qpos[4] < 0.2 and physics.data.qpos[4] > -0.2:
+            reward += 1
+        
+        if physics.data.qpos[4] < 0.1 and physics.data.qpos[4] > -0.1:
+            reward += 1
 
         return reward
