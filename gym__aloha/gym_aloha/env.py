@@ -79,7 +79,7 @@ class AlohaEnv(gym.Env):
     def __init__(
         self,
         task,
-        obs_type="pixels_agent_pos",#"pixels", #"pixels_agent_pos",
+        obs_type="pixels",#"pixels", #"pixels_agent_pos",
         render_mode="rgb_array",
         observation_width=640,
         observation_height=480,
