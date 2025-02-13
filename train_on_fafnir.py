@@ -80,7 +80,7 @@ try:
     if load_saved_model and not create_new_model:
         try:
             #find the last saved model
-            directory = "~/media/local/mfornefeld/models/*"
+            directory = "/media/local/mfornefeld/models/*"
             list_of_files = glob.glob(directory)
             list_of_files_zip = [file for file in list_of_files if file.endswith('.zip')]
             list_of_files_pkl = [file for file in list_of_files if file.endswith('.pkl')]
@@ -113,7 +113,7 @@ try:
                                         gamma=gamma,
                                         target_entropy=target_entropy)
         
-    new_logger = configure("~/media/local/mfornefeld/models/logs", ["stdout", "csv", "tensorboard"])
+    new_logger = configure("/media/local/mfornefeld/models/logs", ["stdout", "csv", "tensorboard"])
     model.set_logger(new_logger)
     model.logger.name_to_value
     if load_saved_replay_buffer:
