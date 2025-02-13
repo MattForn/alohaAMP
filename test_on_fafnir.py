@@ -19,6 +19,7 @@ os.environ['MUJOCO_GL'] = 'egl'
 try:
     env = gym.make("gym_aloha/AlohaInsertion-v0")
     observation, info = env.reset()
+    env.tast.get_reward()
     frames = []
 
     start_pose = np.asarray(gym_aloha.constants.START_ARM_POSE.copy())

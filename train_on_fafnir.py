@@ -72,7 +72,7 @@ try:
     env = gym.make("gym_aloha/AlohaInsertion-features-v0")
     #if more than one env is wanted use this:
     #env = make_vec_env("gym_aloha/AlohaInsertion-features-v0", n_envs=4)
-    target_entropy = -env.action_space.shape[0]
+    target_entropy = 0.2; -env.action_space.shape[0]
     
     #TODO: the model cant use the saved Buffer if more than one env's are used
 
@@ -80,7 +80,7 @@ try:
     if load_saved_model and not create_new_model:
         try:
             #find the last saved model
-            directory = "models/*"
+            directory = "~/media/local/mfornefeld/models/*"
             list_of_files = glob.glob(directory)
             list_of_files_zip = [file for file in list_of_files if file.endswith('.zip')]
             list_of_files_pkl = [file for file in list_of_files if file.endswith('.pkl')]
@@ -113,7 +113,7 @@ try:
                                         gamma=gamma,
                                         target_entropy=target_entropy)
         
-    new_logger = configure("models/logs", ["stdout", "csv", "tensorboard"])
+    new_logger = configure("~/media/local/mfornefeld/models/logs", ["stdout", "csv", "tensorboard"])
     model.set_logger(new_logger)
     model.logger.name_to_value
     if load_saved_replay_buffer:
@@ -173,7 +173,7 @@ try:
                 return False
 
     # Use the custom callback
-    ecc = ErrorCatching_Wandb_Callback(save_freq=save_freq, save_path='./models/',
+    ecc = ErrorCatching_Wandb_Callback(save_freq=save_freq, save_path='~/media/local/mfornefeld/models/',
                                                     name_prefix='sac_ConvNext_aloha',
                                                     save_replay_buffer=save_replay_buffer,
                                                     del_old_checkpoints=del_old_checkpoints)
