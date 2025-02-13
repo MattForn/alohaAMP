@@ -56,7 +56,7 @@ try:
             observation, info = env.reset()
 
     env.close()
-    imageio.mimsave("videos/sac_test1.mp4", np.stack(frames), fps=25)
+    imageio.mimsave("/media/local/mfornefeld/videos/sac_test1.mp4", np.stack(frames), fps=25)
 
 finally:
     # Stop Xvfb
