@@ -12,6 +12,8 @@ from gym_aloha.constants import (
 
 BOX_POSE = [None]  # to be changed from outside
 
+ARM_POSE = [0-0, 0.0, 0.0, 0.0, 0.5, 0.0 , 0.05, -0.05, 0-0, 0.0, 0.0, 0.0, 0.5, 0.0 , 0.05, -0.05]
+
 """
 Environment for simulated robot bi-manual manipulation, with joint position control
 Action space:      [left_arm_qpos (6),             # absolute joint position
@@ -238,6 +240,7 @@ class InsertionTask(BimanualViperXTask):
         return reward
     
 class SimpleTask(BimanualViperXTask):
+
     def __init__(self, random=None):
         super().__init__(random=random)
         self.max_reward = 60
@@ -247,8 +250,8 @@ class SimpleTask(BimanualViperXTask):
 
         # reset qpos, control and box position
         with physics.reset_context():
-            physics.named.data.qpos[:16] = START_ARM_POSE
-            np.copyto(physics.data.ctrl, START_ARM_POSE)
+            physics.named.data.qpos[:16] = ARM_POSE
+            np.copyto(physics.data.ctrl, ARM_POSE)
             assert BOX_POSE[0] is not None
             physics.named.data.qpos[-7:] = BOX_POSE[0]
             # print(f"{BOX_POSE=}")
@@ -278,10 +281,8 @@ class SimpleTask(BimanualViperXTask):
 
         for i in range(6):
             # if the joint value equals 0
-            if physics.data.qpos[i] == 0:
+            if physics.data.qpos[i] == 0.0:
                 # add 1 to the reward
                 reward += 8
 
-        # print current reward
-        print("reward: ", reward)
         return reward

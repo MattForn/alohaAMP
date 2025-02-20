@@ -145,6 +145,17 @@ class AlohaEnv(gym.Env):
                             )
                         }
                     ),
+                    "agent_posi": spaces.Box(
+                        low=-1000.0,
+                        high=1000.0,
+                        shape=(len(JOINTS),),
+                        dtype=np.float64,
+                    ),
+                }
+            )
+        elif self.obs_type == "agent_pos":
+            self.observation_space = spaces.Dict(
+                {
                     "agent_pos": spaces.Box(
                         low=-1000.0,
                         high=1000.0,
@@ -220,6 +231,8 @@ class AlohaEnv(gym.Env):
                 "pixels": {"top": raw_obs["images"]["top"].copy()},
                 "agent_pos": raw_obs["qpos"],
             }
+        elif self.obs_type == "agent_pos":
+            obs = {"agent_pos": raw_obs["qpos"]}
         elif self.obs_type == "features":
             obs = {"top": raw_obs["images"]["top"].copy()}["top"]
             #obs = self.feature_extractor.forward(obs)

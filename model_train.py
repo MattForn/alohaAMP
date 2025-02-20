@@ -38,14 +38,18 @@ from typing import Any, Dict, List, Optional, Type, Union
 # Parameters
 batch_size = 128
 verbose = 0
+learning_rate = 0.0002
+tau = 0.005
+gamma = 0.99
+target_entropy = -14
+ent_coef = 0.2
 buffer_size = 2**12
 load_saved_model = False
 load_saved_replay_buffer = False
-total_learning_timesteps = 10000
-save_freq = 500
+total_learning_timesteps = 1000000
+save_freq = 1000
 save_replay_buffer=False
-del_old_checkpoints=True
-make_video_after_learning = True
+make_video_after_learning = False
 video_length = 100 # number of frames in the video
 
 
@@ -65,6 +69,8 @@ wandb.init(
 try:    
     #env = gym.make("gym_aloha/AlohaSimple")
     env = make_vec_env("gym_aloha/AlohaSimple", n_envs=4)
+
+    target_entropy = -env.action_space.shape[0]
 
     #load the last saved model in models with the graetest amounts of steps
     if load_saved_model:
@@ -101,8 +107,13 @@ try:
                                     verbose=verbose,
                                     buffer_size=buffer_size,
                                     batch_size=batch_size,
-                                    device="cuda",
-                                    ent_coef='auto')
+                                    learning_rate=learning_rate,
+                                    tau=tau,
+                                    gamma=gamma,
+                                    target_entropy=target_entropy,
+                                    ent_coef='auto',
+                                    device="cuda"
+                                    )
         
         
         # Setze die gewünschte Target Entropy
@@ -149,8 +160,9 @@ try:
     print("starting to learn")
     model.learn(total_timesteps=total_learning_timesteps, 
                 callback=[wandb_callback])
+                
     # Save the model and log it to W&B as an artifact
-    model_path = "model/sac_alohaSimple.zip"
+    model_path = "/media/local/ppaetz/model/sac_aloha_Simple.zip"
     model.save(model_path)
 
     artifact = wandb.Artifact('trained-model', type='model')
