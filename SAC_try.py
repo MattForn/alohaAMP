@@ -130,7 +130,6 @@ class ErrorCatchingCallback(CheckpointCallback):
             e_c = self.model.logger.name_to_value["train/ent_coef"]
             e_c_loss = self.model.logger.name_to_value["train/ent_coef_loss"]
             l_rate = self.model.logger.name_to_value["train/learning_rate"]
-            
             return super()._on_step()
         except Exception as e:
             print("################################")

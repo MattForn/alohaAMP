@@ -149,7 +149,7 @@ try:
                 "critic loss": self.model.logger.name_to_value["train/critic_loss"],
                 "ent_coef": self.model.logger.name_to_value["train/ent_coef"],
                 "ent_coef_loss": self.model.logger.name_to_value["train/ent_coef_loss"],
-                "learning_rate": self.model.logger.name_to_value["train/learning_rate"],
+                "learning_rate": self.model.logger.name_to_value["train/learning_rate"]
             })
             return True
     
