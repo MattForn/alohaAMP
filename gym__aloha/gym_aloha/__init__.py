@@ -22,7 +22,8 @@ register(
 
 register(
     id="gym_aloha/AlohaSimple",
-    entry_point="gym_aloha.env:AlohaEnv",
+    #entry_point="gym_aloha.env:AlohaEnv",
+    entry_point="gym_aloha.env:SimpleAlohaEnv",
     max_episode_steps=300,
     nondeterministic=True,
     kwargs={"obs_type": "agent_pos", "task": "simple"},

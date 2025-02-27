@@ -1,15 +1,15 @@
 import os
-from xvfbwrapper import Xvfb
+#from xvfbwrapper import Xvfb
 
 # Start Xvfb
-vdisplay = Xvfb()
-vdisplay.start()
+#vdisplay = Xvfb()
+#vdisplay.start()
 
 # Set the DISPLAY environment variable
-os.environ['DISPLAY'] = ':{}'.format(vdisplay.new_display)
+#os.environ['DISPLAY'] = ':{}'.format(vdisplay.new_display)
 
 # Set up EGL for headless rendering
-os.environ['MUJOCO_GL'] = 'egl'
+#os.environ['MUJOCO_GL'] = 'egl'
 
 import wandb
 from stable_baselines3.common.logger import HParam
@@ -59,7 +59,7 @@ wandb.init(
     project="aloha-simple",  # Replace with your project name
     config={
         "algorithm": "SAC",
-        "env": "AlohaSimple",
+        "env": "SimpleAloha",
         "batch_size": batch_size,
         "buffer_size": buffer_size,
         "learning_timesteps": total_learning_timesteps,
@@ -162,7 +162,7 @@ try:
                 callback=[wandb_callback])
                 
     # Save the model and log it to W&B as an artifact
-    model_path = "/media/local/ppaetz/model/sac_aloha_Simple.zip"
+    model_path = "model/sac_aloha_Simple.zip"
     model.save(model_path)
 
     artifact = wandb.Artifact('trained-model', type='model')
@@ -198,6 +198,4 @@ try:
     env.close()
 
 finally:
-    # Stop Xvfb
-    print("stopping Xvfb_____BECAUSE YOU STOPPED MEEEEEEEE!")
-    vdisplay.stop()
+    print("Weeeerbung Eeeende")

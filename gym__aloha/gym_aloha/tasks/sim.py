@@ -12,7 +12,8 @@ from gym_aloha.constants import (
 
 BOX_POSE = [None]  # to be changed from outside
 
-ARM_POSE = [0-0, 0.0, 0.0, 0.0, 0.5, 0.0 , 0.05, -0.05, 0-0, 0.0, 0.0, 0.0, 0.5, 0.0 , 0.05, -0.05]
+ARM_POSE = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5 , 0.0, 0.0,
+            0.5, 0.5, 0.5, 0.5, 0.5, 0.5 , 0.0, 0.0]
 
 """
 Environment for simulated robot bi-manual manipulation, with joint position control
@@ -243,23 +244,21 @@ class SimpleTask(BimanualViperXTask):
 
     def __init__(self, random=None):
         super().__init__(random=random)
-        self.max_reward = 60
+        self.max_reward = 6
 
     def initialize_episode(self, physics):
         """Sets the state of the environment at the start of each episode."""
 
-        # reset qpos, control and box position
+        # reset qpos and control for the arms only
         with physics.reset_context():
             physics.named.data.qpos[:16] = ARM_POSE
             np.copyto(physics.data.ctrl, ARM_POSE)
-            assert BOX_POSE[0] is not None
-            physics.named.data.qpos[-7:] = BOX_POSE[0]
-            # print(f"{BOX_POSE=}")
+
         super().initialize_episode(physics)
 
     @staticmethod
     def get_env_state(physics):
-        env_state = physics.data.qpos.copy()[16:]
+        env_state = physics.data.qpos.copy()[:16] 
         return env_state
 
     def get_reward(self, physics):
@@ -269,20 +268,20 @@ class SimpleTask(BimanualViperXTask):
         # for every joint within the left arm
         for i in range(6):
             # if the joint is within the range of 0.1
+            if physics.data.qpos[i] > 0.3 and physics.data.qpos[i] < -0.3:
+                # add 1 to the reward
+                reward -= 10
+
+        for i in range(6):
+            # if the joint is within the range of 0.1
             if physics.data.qpos[i] < 0.3 and physics.data.qpos[i] > -0.3:
                 # add 1 to the reward
                 reward += 1
 
-        for i in range(6):
-            # if the joint is within the range of 0.1
-            if physics.data.qpos[i] < 0.1 and physics.data.qpos[i] > -0.1:
-                # add 1 to the reward
-                reward += 1
-
-        for i in range(6):
-            # if the joint value equals 0
-            if physics.data.qpos[i] == 0.0:
-                # add 1 to the reward
-                reward += 8
+        # for i in range(6):
+        #     # if the joint is within the range of 0.1
+        #     if physics.data.qpos[i] < 0.1 and physics.data.qpos[i] > -0.1:
+        #         # add 1 to the reward
+        #         reward += 1
 
         return reward
