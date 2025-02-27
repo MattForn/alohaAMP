@@ -12,7 +12,7 @@ def optimize_sac(trial):
     gamma = trial.suggest_uniform('gamma', 0.9, 0.9999)
     tau = trial.suggest_uniform('tau', 0.005, 0.05)
     batch_size = trial.suggest_categorical('batch_size', [32, 64, 128, 256])
-    buffer_size = trial.suggest_categorical('buffer_size', [10000, 50000, 100000])
+    #buffer_size = trial.suggest_categorical('buffer_size', [10000, 50000, 100000])
     ent_coef = trial.suggest_categorical('ent_coef', ['auto', 0.1, 0.01, 0.001])
 
     # Create the SAC model with the suggested hyperparameters
@@ -23,7 +23,7 @@ def optimize_sac(trial):
         gamma=gamma,
         tau=tau,
         batch_size=batch_size,
-        buffer_size=buffer_size,
+        buffer_size=1000, #buffer_size,
         ent_coef=ent_coef,
         verbose=0  # Suppress training logs for faster optimization
     )
@@ -39,7 +39,7 @@ def optimize_sac(trial):
 
 # Run Optuna optimization
 study = optuna.create_study(direction="maximize")  # Maximize reward
-study.optimize(optimize_sac, n_trials=20, show_progress_bar=True)  # Run 20 optimization trials
+study.optimize(optimize_sac, n_trials=20, show_progress_bar=True, n_jobs=16)  # Run 20 optimization trials
 
 # Get the best hyperparameters
 best_hyperparams = study.best_params
