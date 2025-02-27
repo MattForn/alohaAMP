@@ -39,7 +39,7 @@ def optimize_sac(trial):
 
 # Run Optuna optimization
 study = optuna.create_study(direction="maximize")  # Maximize reward
-study.optimize(optimize_sac, n_trials=20, show_progress_bar=True, n_jobs=16)  # Run 20 optimization trials
+study.optimize(optimize_sac, n_trials=128, show_progress_bar=True, n_jobs=64)  # Run 20 optimization trials
 
 # Get the best hyperparameters
 best_hyperparams = study.best_params
