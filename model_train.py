@@ -44,12 +44,12 @@ gamma = 0.99
 target_entropy = -14
 ent_coef = 0.2
 buffer_size = 2**12
-load_saved_model = False
+load_saved_model = True
 load_saved_replay_buffer = False
-total_learning_timesteps = 1000000
+total_learning_timesteps = 100000
 save_freq = 1000
 save_replay_buffer=False
-make_video_after_learning = False
+make_video_after_learning = True
 video_length = 100 # number of frames in the video
 
 
@@ -75,21 +75,9 @@ try:
     #load the last saved model in models with the graetest amounts of steps
     if load_saved_model:
         try:
-            #find the last saved model
-            directory = "models/*"
-            list_of_files = glob.glob(directory)
-            list_of_files_zip = [file for file in list_of_files if file.endswith('.zip')]
-            list_of_files_pkl = [file for file in list_of_files if file.endswith('.pkl')]
-            latest_zip_file = max(list_of_files_zip, key=os.path.getctime)
-            latest_pkl_file = max(list_of_files_pkl, key=os.path.getctime)
-            latest_zip_file = max(list_of_files_zip, key=os.path.getctime)
-            print(f"trying to load a model: {latest_zip_file}")
-            model = stable_baselines3.SAC.load(latest_zip_file, env=env, verbose=1)
+            model = stable_baselines3.SAC.load("model/sac_aloha_Simple.zip", env=env, verbose=1)
             print('------- successfully loaded Model -------')
-                
-            #chainge batch size of the model
             model.batch_size = batch_size
-            model.verbose = verbose
             model.device="cuda" if torch.cuda.is_available() else "cpu"
         except:
             print('------- can not loaded Model -------')
@@ -180,13 +168,8 @@ try:
         for i in range(video_length):
             # get model predicted action
             action, _states = model.predict(observation, deterministic=True)
-            
-            #action = close_pose
             observation, reward, terminated, truncated, info = env.step(action)
             print(np.max(observation["top"]))
-            #print(np.shape(observation["top"]))
-            #print(type(observation["top"]))
-            #print("reward: ", reward)
             image = env.render()
             frames.append(image)
 

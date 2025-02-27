@@ -258,7 +258,7 @@ class SimpleTask(BimanualViperXTask):
 
     @staticmethod
     def get_env_state(physics):
-        env_state = physics.data.qpos.copy()[:16] 
+        env_state = physics.data.qpos.copy()[:16]
         return env_state
 
     def get_reward(self, physics):
@@ -267,21 +267,11 @@ class SimpleTask(BimanualViperXTask):
 
         # for every joint within the left arm
         for i in range(6):
-            # if the joint is within the range of 0.1
             if physics.data.qpos[i] > 0.3 and physics.data.qpos[i] < -0.3:
-                # add 1 to the reward
                 reward -= 10
 
         for i in range(6):
-            # if the joint is within the range of 0.1
             if physics.data.qpos[i] < 0.3 and physics.data.qpos[i] > -0.3:
-                # add 1 to the reward
                 reward += 1
-
-        # for i in range(6):
-        #     # if the joint is within the range of 0.1
-        #     if physics.data.qpos[i] < 0.1 and physics.data.qpos[i] > -0.1:
-        #         # add 1 to the reward
-        #         reward += 1
 
         return reward

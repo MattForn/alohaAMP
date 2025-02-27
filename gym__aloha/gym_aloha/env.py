@@ -241,7 +241,7 @@ class SimpleAlohaEnv(gym.Env):
     ):
         super().__init__()
         print("running SimpleAlohaEnv init")
-        self.task = task
+        self.task = task        
         self.obs_type = obs_type
         self.render_mode = render_mode
         self.observation_width = observation_width
@@ -376,6 +376,10 @@ class SimpleAlohaEnv(gym.Env):
         # speed limit if wanted
         # action = self.clip_speed(action)
         action = self.tanH_speed(action)
+
+        # set every action value after position 5 to 0
+        action[6:] = 0
+
         _, reward, _, raw_obs = self._env.step(action)
 
         # TODO(rcadene): add an enum
