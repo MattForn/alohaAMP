@@ -51,6 +51,9 @@ class AlohaEnv(gym.Env):
         self._env = self._make_env_task(self.task)
         self.last_action = None
         self.speed_limit = 0.1 # m/s
+    
+        # fetch max_episode_steps from the environment registry
+        self.max_episode_steps = gym.envs.registry["gym_aloha/AlohaSimple"].max_episode_steps
         
         if self.obs_type == "pixels_agent_pos":
             self.observation_space = spaces.Dict(
@@ -218,7 +221,11 @@ class AlohaEnv(gym.Env):
 
         observation = self._format_raw_obs(raw_obs)
 
+        # check if episode is truncated after max_episode_steps
         truncated = False
+        if self._env._step_count >= self.max_episode_steps:
+            truncated = True
+            
         return observation, reward, terminated, truncated, info
 
     def close(self):
