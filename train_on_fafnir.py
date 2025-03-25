@@ -56,7 +56,7 @@ wandb.init(
     project="aloha-insertion",  # Replace with your project name
     config={
         "algorithm": "SAC",
-        "env": "AlohaSimple",
+        "env": "SimpleAloha",
         "batch_size": batch_size,
         "buffer_size": buffer_size,
         "learning_timesteps": total_learning_timesteps,
@@ -64,7 +64,7 @@ wandb.init(
 )
 
 try:    
-    env = gym.make("AlohaSimple")
+    env = gym.make("gym_aloha/AlohaSimple")
     #env = make_vec_env("gym_aloha/AlohaSimple", n_envs=4)
 
     #observation, info = env.reset()
