@@ -9,7 +9,7 @@ env = SimpleGymEnv()
 # Train SAC model
 model = SAC("MlpPolicy", env, verbose=1)
 # model = SAC.load("sac_simple_env.zip", env=env, verbose=1)
-model.learn(total_timesteps=5000)
+model.learn(total_timesteps=1000)
 
 states = env.get_past_states()
 # print(states)
