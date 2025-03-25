@@ -64,8 +64,8 @@ wandb.init(
 )
 
 try:    
-    #env = gym.make("gym_aloha/AlohaInsertion-features-v0")
-    env = make_vec_env("gym_aloha/AlohaInsertion-features-v0", n_envs=4)
+    env = gym.make("gym_aloha/AlohaInsertion-features-v0")
+    #env = make_vec_env("gym_aloha/AlohaInsertion-features-v0", n_envs=4)
 
     #observation, info = env.reset()
     

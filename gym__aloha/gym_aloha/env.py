@@ -253,6 +253,9 @@ class SimpleAlohaEnv(gym.Env):
         self.last_action = None
         self.speed_limit = 0.1 # m/s
         
+        # fetch max_episode_steps from the environment registry
+        self.max_episode_steps = gym.envs.registry["gym_aloha/AlohaSimple"].max_episode_steps
+        
         if self.obs_type == "pixels_agent_pos":
             self.observation_space = spaces.Dict(
                 {
@@ -381,7 +384,12 @@ class SimpleAlohaEnv(gym.Env):
         action[6:] = 0
 
         _, reward, _, raw_obs = self._env.step(action)
-
+        
+        # check if episode is truncated after max_episode_steps
+        truncated = False
+        if self._env._step_count >= self.max_episode_steps:
+            truncated = True
+            
         # TODO(rcadene): add an enum
         terminated = is_success = reward == 6
 
@@ -391,7 +399,6 @@ class SimpleAlohaEnv(gym.Env):
 
         observation = self._format_raw_obs(raw_obs)
 
-        truncated = False
         return observation, reward, terminated, truncated, info
 
     def close(self):

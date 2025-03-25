@@ -67,11 +67,12 @@ wandb.init(
 )
 
 try:    
-    #env = gym.make("gym_aloha/AlohaSimple")
-    env = make_vec_env("gym_aloha/AlohaSimple", n_envs=4)
+    env = gym.make("gym_aloha/AlohaSimple")
+    #env = make_vec_env("gym_aloha/AlohaSimple", n_envs=4)
 
     target_entropy = -env.action_space.shape[0]
-
+    print(f"setting target_entropy: {target_entropy}")
+    
     #load the last saved model in models with the graetest amounts of steps
     if load_saved_model:
         try:
