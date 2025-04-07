@@ -102,13 +102,13 @@ try:
         action_space_dim = np.prod(env.action_space.shape)
         target_entropy = -action_space_dim
     
-        model = stable_baselines3.SAC("MultiInputPolicy", 
+        model = stable_baselines3.SAC("MultiInputPolicy",
                                     env, 
                                     verbose=verbose, 
                                     buffer_size=buffer_size,
                                     batch_size=batch_size,
                                     device="cuda",
-                                    ent_coef='auto')
+                                    ent_coef=0.1)
         
         
         # Setze die gewünschte Target Entropy

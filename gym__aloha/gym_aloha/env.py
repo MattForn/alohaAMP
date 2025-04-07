@@ -69,8 +69,8 @@ class AlohaEnv(gym.Env):
                         }
                     ),
                     "agent_posi": spaces.Box(
-                        low=-1000.0,
-                        high=1000.0,
+                        low=-10.0,
+                        high=10.0,
                         shape=(len(JOINTS),),
                         dtype=np.float64,
                     ),
@@ -80,8 +80,8 @@ class AlohaEnv(gym.Env):
             self.observation_space = spaces.Dict(
                 {
                     "agent_pos": spaces.Box(
-                        low=-1000.0,
-                        high=1000.0,
+                        low=-10.0,
+                        high=10.0,
                         shape=(len(JOINTS),),
                         dtype=np.float64,
                     ),
