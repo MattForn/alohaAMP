@@ -259,6 +259,9 @@ class SimpleAlohaEnv(gym.Env):
         self._env = self._make_env_task(self.task)
         self.last_action = None
         self.speed_limit = 0.1 # m/s
+        self.last_reward = 0
+        self.tolleranz   = 0.1
+        self.max_reward_since=0
         
         # fetch max_episode_steps from the environment registry
         self.max_episode_steps = gym.envs.registry["gym_aloha/AlohaSimple"].max_episode_steps
@@ -277,8 +280,8 @@ class SimpleAlohaEnv(gym.Env):
                         }
                     ),
                     "agent_posi": spaces.Box(
-                        low=-1000.0,
-                        high=1000.0,
+                        low=-10.0,
+                        high=10.0,
                         shape=(len(JOINTS),),
                         dtype=np.float64,
                     ),
@@ -288,8 +291,8 @@ class SimpleAlohaEnv(gym.Env):
             self.observation_space = spaces.Dict(
                 {
                     "agent_pos": spaces.Box(
-                        low=-1000.0,
-                        high=1000.0,
+                        low=-10.0,
+                        high=10.0,
                         shape=(len(JOINTS),),
                         dtype=np.float64,
                     ),
@@ -398,14 +401,25 @@ class SimpleAlohaEnv(gym.Env):
             truncated = True
             
         # TODO(rcadene): add an enum
-        terminated = is_success = reward == 6
-
+        terminated = is_success = False
+        if reward >= 6-self.tolleranz:
+            self.max_reward_since+=1
+            if self.max_reward_since >= 10:
+                terminated = is_success = True
+        else:
+            self.max_reward_since=0
+            
+            
+        if reward >= 6-self.tolleranz and self.last_reward >= 6-self.tolleranz:
+            reward = 100*self.max_reward_since
+            
         #TODO: WAS IST DAS DA ÜBER MIR
 
         info = {"is_success": is_success}
 
         observation = self._format_raw_obs(raw_obs)
 
+        self.last_reward = reward
         return observation, reward, terminated, truncated, info
 
     def close(self):
