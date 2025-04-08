@@ -258,9 +258,9 @@ class SimpleAlohaEnv(gym.Env):
         
         self._env = self._make_env_task(self.task)
         self.last_action = None
-        self.speed_limit = 0.1 # m/s
+        self.speed_limit = 0.01 # m/s
         self.last_reward = 0
-        self.tolleranz   = 0.1
+        self.tolleranz   = 0.05
         self.max_reward_since=0
         
         # fetch max_episode_steps from the environment registry
@@ -311,7 +311,7 @@ class SimpleAlohaEnv(gym.Env):
             if visualize
             else (self.observation_width, self.observation_height)
         )
-        image = self._env.physics.render(height=height, width=width, camera_id="top")
+        image = self._env.physics.render(height=height, width=width, camera_id="angle")
         return image
 
     def _make_env_task(self, task_name):
@@ -392,6 +392,7 @@ class SimpleAlohaEnv(gym.Env):
 
         # set every action value after position 5 to 0
         action[6:] = 0
+        action[7] = np.pi
 
         _, reward, _, raw_obs = self._env.step(action)
         
@@ -407,7 +408,10 @@ class SimpleAlohaEnv(gym.Env):
             if self.max_reward_since >= 10:
                 terminated = is_success = True
         else:
+            if self.max_reward_since >=1:
+                reward = -10
             self.max_reward_since=0
+            
             
             
         if reward >= 6-self.tolleranz and self.last_reward >= 6-self.tolleranz:

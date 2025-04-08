@@ -12,7 +12,7 @@ import glob
 
 try:    
     env = gym.make("gym_aloha/AlohaSimple")
-    video_length = 100 # number of frames in the video
+    video_length = 300 # number of frames in the video
 
     print('------- trying to load Model -------')
     try:
