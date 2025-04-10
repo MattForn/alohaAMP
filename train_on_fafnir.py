@@ -76,7 +76,7 @@ try:
     if load_saved_model:
         try:
             #find the last saved model
-            directory = "models/*"
+            directory = "/media/local/fornepaetz/models/*"
             list_of_files = glob.glob(directory)
             list_of_files_zip = [file for file in list_of_files if file.endswith('.zip')]
             list_of_files_pkl = [file for file in list_of_files if file.endswith('.pkl')]
@@ -128,7 +128,7 @@ try:
                 print('------- cant load Replay Buffer -------')
                 print(e)
 
-    new_logger = configure("models/logs", ["stdout", "csv", "tensorboard"])
+    new_logger = configure("/media/local/fornepaetz/models/logs", ["stdout", "csv", "tensorboard"])
     model.set_logger(new_logger)
 
     class WandbCallback(BaseCallback):
@@ -172,7 +172,7 @@ try:
                 return False
 
     # Use the custom callback
-    ecc = ErrorCatching_Wandb_Callback(save_freq=save_freq, save_path='./models/',
+    ecc = ErrorCatching_Wandb_Callback(save_freq=save_freq, save_path='/media/local/fornepaetz/models/',
                                                     name_prefix='sac_ConvNext_aloha',
                                                     save_replay_buffer=save_replay_buffer,
                                                     del_old_checkpoints=del_old_checkpoints)
@@ -182,7 +182,7 @@ try:
     model.learn(total_timesteps=total_learning_timesteps, 
                 callback=[ecc, wandb_callback])
     # Save the model and log it to W&B as an artifact
-    model_path = "models/sac_ConvNext_aloha.zip"
+    model_path = "/media/local/fornepaetz/models/sac_ConvNext_aloha.zip"
     model.save(model_path)
 
     artifact = wandb.Artifact('trained-model', type='model')
@@ -212,7 +212,7 @@ try:
 
             if terminated or truncated:
                 observation, info = env.reset()
-        filename = "videos/example" + str(model._total_timesteps) + ".mp4"
+        filename = "/media/local/fornepaetz/videos/example" + str(model._total_timesteps) + ".mp4"
         imageio.mimsave(filename, np.stack(frames), fps=25)
 
     env.close()

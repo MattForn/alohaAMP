@@ -16,7 +16,7 @@ try:
 
     print('------- trying to load Model -------')
     try:
-        model = stable_baselines3.SAC.load("models/sac_aloha_Simple.zip", env=env, verbose=1)
+        model = stable_baselines3.SAC.load("/media/local/fornepaetz/models/sac_aloha_Simple.zip", env=env, verbose=1)
         print('------- successfully loaded Model -------')
         model.device="cuda" if torch.cuda.is_available() else "cpu"
     except:
@@ -39,7 +39,7 @@ try:
 
         if terminated or truncated:
             observation, info = env.reset()
-    filename = "videos/example" + str(model._total_timesteps) + ".mp4"
+    filename = "/media/local/fornepaetz/videos/example" + str(model._total_timesteps) + ".mp4"
     imageio.mimsave(filename, np.stack(frames), fps=25)
 
     env.close()
