@@ -5,6 +5,7 @@ from dm_control.suite import base
 
 from gym_aloha.constants import (
     START_ARM_POSE,
+    START_ARM_POSE_SIMPLE,
     normalize_puppet_gripper_position,
     normalize_puppet_gripper_velocity,
     unnormalize_puppet_gripper_position,
@@ -12,8 +13,6 @@ from gym_aloha.constants import (
 
 BOX_POSE = [None]  # to be changed from outside
 
-ARM_POSE = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5 , 0.0, 0.0,
-            0.5, 0.5, 0.5, 0.5, 0.5, 0.5 , 0.0, 0.0]
 
 """
 Environment for simulated robot bi-manual manipulation, with joint position control
@@ -250,9 +249,14 @@ class SimpleTask(BimanualViperXTask):
         """Sets the state of the environment at the start of each episode."""
 
         # reset qpos and control for the arms only
+        # add a random offset to the left arm
+        rand_offset_l = np.random.normal(START_ARM_POSE_SIMPLE[:6], 0.2)
+        saps = START_ARM_POSE_SIMPLE
+        saps[:6]= saps[:6] + rand_offset_l
+        
         with physics.reset_context():
-            physics.named.data.qpos[:16] = ARM_POSE
-            np.copyto(physics.data.ctrl, ARM_POSE)
+            physics.named.data.qpos[:16] = saps
+            np.copyto(physics.data.ctrl, saps)
 
         super().initialize_episode(physics)
 
