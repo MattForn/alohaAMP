@@ -33,6 +33,7 @@ try:
         action, _states = model.predict(observation, deterministic=True)
         action[6:] = 0
         observation, reward, terminated, truncated, info = env.step(action)
+        print(reward)
         image = env.render()
         frames.append(image)
 

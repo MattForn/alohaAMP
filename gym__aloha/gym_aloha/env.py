@@ -260,7 +260,7 @@ class SimpleAlohaEnv(gym.Env):
         self.last_action = None
         self.speed_limit = 0.01 # m/s
         self.last_reward = 0
-        self.tolleranz   = 0.05
+        self.tolleranz   = 0.5
         self.max_reward_since=0
         
         # fetch max_episode_steps from the environment registry
@@ -404,18 +404,16 @@ class SimpleAlohaEnv(gym.Env):
         # TODO(rcadene): add an enum
         terminated = is_success = False
         if reward >= 6-self.tolleranz:
+            reward = reward + 5
             self.max_reward_since+=1
-            if self.max_reward_since >= 10:
+            if self.max_reward_since >= 3:
                 terminated = is_success = True
+                reward = 6*self.max_episode_steps - 6*self._env._step_count
         else:
-            if self.max_reward_since >=1:
-                reward = -10
+            #if self.max_reward_since >=1:
+            #    reward = -5
             self.max_reward_since=0
             
-            
-            
-        if reward >= 6-self.tolleranz and self.last_reward >= 6-self.tolleranz:
-            reward = 100*self.max_reward_since
             
         #TODO: WAS IST DAS DA ÜBER MIR
 
