@@ -24,6 +24,7 @@ from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 from stable_baselines3.common.callbacks import CheckpointCallback, BaseCallback
 from stable_baselines3.common.env_util import make_vec_env
 from torchvision.transforms import Compose, Normalize, ToTensor, Resize
+from typing import Tuple
 import torch
 import torch.nn.functional as F
 from dm_control.rl.control import PhysicsError
@@ -38,13 +39,16 @@ from typing import Any, Dict, List, Optional, Type, Union
 # Parameters
 batch_size = 128
 verbose = 0
-learning_rate = 0.0002
+learning_rate = 0.0004
 tau = 0.005
 gamma = 0.99
 target_entropy = -14
 ent_coef = 0.2
-buffer_size = 2**12
-load_saved_model = False
+buffer_size = 2**13
+train_freq: Union[int, Tuple[int, str]] = (3, "step")
+model_path = "models/sac_aloha_Simple2.zip"
+load_model_path = "models/sac_aloha_Simple3.zip"
+load_saved_model = True
 load_saved_replay_buffer = False
 total_learning_timesteps = 1000000
 save_freq = 10000
@@ -76,9 +80,10 @@ try:
     #load the last saved model in models with the graetest amounts of steps
     if load_saved_model:
         try:
-            model = stable_baselines3.SAC.load("models/sac_aloha_Simple.zip", env=env, verbose=1)
+            model = stable_baselines3.SAC.load(load_model_path, env=env, verbose=1)
             print('------- successfully loaded Model -------')
             model.batch_size = batch_size
+            model.learning_rate = learning_rate
             model.device="cuda" if torch.cuda.is_available() else "cpu"
         except:
             print('------- can not loaded Model -------')
@@ -96,6 +101,7 @@ try:
                                     verbose=verbose,
                                     buffer_size=buffer_size,
                                     batch_size=batch_size,
+                                    train_freq=train_freq,
                                     learning_rate=learning_rate,
                                     tau=tau,
                                     gamma=gamma,
@@ -151,7 +157,6 @@ try:
                 callback=[wandb_callback])
                 
     # Save the model and log it to W&B as an artifact
-    model_path = "models/sac_aloha_Simple.zip"
     model.save(model_path)
 
     artifact = wandb.Artifact('trained-model', type='model')
@@ -182,4 +187,10 @@ try:
     env.close()
 
 finally:
+    try:
+        model.save(model_path)
+        print("------- saved Model -------")
+    except:
+        print("------- can not save Model -------")
+        pass
     print("Weeeerbung Eeeende")

@@ -10,13 +10,14 @@ from stable_baselines3.common.env_util import make_vec_env
 import torch
 import glob
 
-try:    
+try:
+    model_path = "models/sac_aloha_Simple2.zip"
     env = gym.make("gym_aloha/AlohaSimple")
     video_length = 300 # number of frames in the video
 
     print('------- trying to load Model -------')
     try:
-        model = stable_baselines3.SAC.load("models/sac_aloha_Simple.zip", env=env, verbose=1)
+        model = stable_baselines3.SAC.load(model_path, env=env, verbose=1)
         print('------- successfully loaded Model -------')
         model.device="cuda" if torch.cuda.is_available() else "cpu"
     except:
