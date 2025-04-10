@@ -76,7 +76,7 @@ try:
     #load the last saved model in models with the graetest amounts of steps
     if load_saved_model:
         try:
-            model = stable_baselines3.SAC.load("model/sac_aloha_Simple.zip", env=env, verbose=1)
+            model = stable_baselines3.SAC.load("models/sac_aloha_Simple.zip", env=env, verbose=1)
             print('------- successfully loaded Model -------')
             model.batch_size = batch_size
             model.device="cuda" if torch.cuda.is_available() else "cpu"
@@ -151,7 +151,7 @@ try:
                 callback=[wandb_callback])
                 
     # Save the model and log it to W&B as an artifact
-    model_path = "model/sac_aloha_Simple.zip"
+    model_path = "models/sac_aloha_Simple.zip"
     model.save(model_path)
 
     artifact = wandb.Artifact('trained-model', type='model')
