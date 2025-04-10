@@ -182,7 +182,7 @@ try:
     model.learn(total_timesteps=total_learning_timesteps, 
                 callback=[ecc, wandb_callback])
     # Save the model and log it to W&B as an artifact
-    model_path = "model/sac_ConvNext_aloha.zip"
+    model_path = "models/sac_ConvNext_aloha.zip"
     model.save(model_path)
 
     artifact = wandb.Artifact('trained-model', type='model')

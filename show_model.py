@@ -16,7 +16,7 @@ try:
 
     print('------- trying to load Model -------')
     try:
-        model = stable_baselines3.SAC.load("model/sac_aloha_Simple.zip", env=env, verbose=1)
+        model = stable_baselines3.SAC.load("models/sac_aloha_Simple.zip", env=env, verbose=1)
         print('------- successfully loaded Model -------')
         model.device="cuda" if torch.cuda.is_available() else "cpu"
     except:
