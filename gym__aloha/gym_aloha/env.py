@@ -280,8 +280,8 @@ class SimpleAlohaEnv(gym.Env):
                         }
                     ),
                     "agent_posi": spaces.Box(
-                        low=-10.0,
-                        high=10.0,
+                        low=-np.pi,
+                        high=np.pi,
                         shape=(len(JOINTS),),
                         dtype=np.float64,
                     ),
@@ -291,8 +291,8 @@ class SimpleAlohaEnv(gym.Env):
             self.observation_space = spaces.Dict(
                 {
                     "agent_pos": spaces.Box(
-                        low=-10.0,
-                        high=10.0,
+                        low=-np.pi,
+                        high=np.pi,
                         shape=(len(JOINTS),),
                         dtype=np.float64,
                     ),
@@ -403,27 +403,26 @@ class SimpleAlohaEnv(gym.Env):
             
         # TODO(rcadene): add an enum
         terminated = is_success = False
-        if reward >= 6-self.tolleranz:
-            self.max_reward_since+=1
-            if self.max_reward_since >= 10:
-                terminated = is_success = True
-        else:
-            if self.max_reward_since >=1:
-                reward = -10
-            self.max_reward_since=0
+        # if reward >= 6-self.tolleranz:
+        #     self.max_reward_since+=1
+        #     # if self.max_reward_since >= 10:
+        #     #     terminated = is_success = True
+        # else:
+        #     if self.max_reward_since >=1:
+        #         reward = -10
+        #     self.max_reward_since=0
             
             
             
-        if reward >= 6-self.tolleranz and self.last_reward >= 6-self.tolleranz:
-            reward = 100*self.max_reward_since
+        # if reward >= 6-self.tolleranz and self.last_reward >= 6-self.tolleranz:
+        #     reward = 100*self.max_reward_since
             
-        #TODO: WAS IST DAS DA ÜBER MIR
 
         info = {"is_success": is_success}
 
         observation = self._format_raw_obs(raw_obs)
 
-        self.last_reward = reward
+        # self.last_reward = reward
         return observation, reward, terminated, truncated, info
 
     def close(self):

@@ -268,15 +268,17 @@ class SimpleTask(BimanualViperXTask):
 
     def get_reward(self, physics):
 
-        reward = 0
+        # reward = 0
 
         # for every joint within the left arm
-        for i in range(6):
-            if physics.data.qpos[i] > 0.3 and physics.data.qpos[i] < -0.3:
-                reward -= 10
+        # for i in range(6):
+        #     if physics.data.qpos[i] > 0.3 and physics.data.qpos[i] < -0.3:
+        #         reward -= 10
 
-        for i in range(6):
-            if physics.data.qpos[i] < 0.3 and physics.data.qpos[i] > -0.3:
-                reward += 1
+        # for i in range(6):
+        #     if physics.data.qpos[i] < 0.3 and physics.data.qpos[i] > -0.3:
+        #         reward += 1
 
+        # reward = 6 - 1*np.sum(physics.data.qpos[:6]**2)
+        reward = 1/(np.sum(np.abs(physics.data.qpos[:6])))
         return reward

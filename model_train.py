@@ -37,22 +37,23 @@ from stable_baselines3.common.type_aliases import Schedule
 from typing import Any, Dict, List, Optional, Type, Union
 
 # Parameters
-batch_size = 128
+batch_size = 256
 verbose = 0
-learning_rate = 0.0004
+learning_rate = 0.0006
 tau = 0.005
 gamma = 0.99
 target_entropy = -14
 ent_coef = 0.2
-buffer_size = 2**13
-train_freq: Union[int, Tuple[int, str]] = (3, "step")
-model_path = "models/sac_aloha_Simple2.zip"
-load_model_path = "models/sac_aloha_Simple3.zip"
-load_saved_model = True
+buffer_size = 2**14
+gradient_steps = 1
+train_freq: Union[int, Tuple[int, str]] = (1, "step")
+model_path_save = "models/sac_1devX3.zip"
+model_path_load = "models/sac_1devX3.zip"
+load_saved_model = False
 load_saved_replay_buffer = False
-total_learning_timesteps = 1000000
+total_learning_timesteps = 100000000
 save_freq = 10000
-save_replay_buffer=False
+save_replay_buffer=True
 make_video_after_learning = True
 video_length = 100 # number of frames in the video
 
@@ -60,7 +61,7 @@ video_length = 100 # number of frames in the video
 
 # Initialize W&B project
 wandb.init(
-    project="aloha-simple",  # Replace with your project name
+    project="aloha-simple-1devX",  # Replace with your project name
     config={
         "algorithm": "SAC",
         "env": "SimpleAloha",
@@ -80,7 +81,7 @@ try:
     #load the last saved model in models with the graetest amounts of steps
     if load_saved_model:
         try:
-            model = stable_baselines3.SAC.load(load_model_path, env=env, verbose=1)
+            model = stable_baselines3.SAC.load(model_path_load, env=env, verbose=1)
             print('------- successfully loaded Model -------')
             model.batch_size = batch_size
             model.learning_rate = learning_rate
@@ -103,11 +104,12 @@ try:
                                     batch_size=batch_size,
                                     train_freq=train_freq,
                                     learning_rate=learning_rate,
+                                    gradient_steps=int(gradient_steps),
                                     tau=tau,
                                     gamma=gamma,
                                     target_entropy=target_entropy,
                                     ent_coef='auto',
-                                    device="cuda"
+                                    device="cuda",
                                     )
         
         
@@ -147,6 +149,7 @@ try:
                 "ent_coef": self.model.logger.name_to_value["train/ent_coef"],
                 "ent_coef_loss": self.model.logger.name_to_value["train/ent_coef_loss"],
                 "learning_rate": self.model.logger.name_to_value["train/learning_rate"],
+                "q_values": self.model.logger.name_to_value["train/q_values"],
             })
             return True
     
@@ -157,10 +160,10 @@ try:
                 callback=[wandb_callback])
                 
     # Save the model and log it to W&B as an artifact
-    model.save(model_path)
+    model.save(model_path_save)
 
     artifact = wandb.Artifact('trained-model', type='model')
-    artifact.add_file(model_path)
+    artifact.add_file(model_path_save)
     wandb.log_artifact(artifact)
 
     # End the W&B run at the end of the training
@@ -188,7 +191,13 @@ try:
 
 finally:
     try:
-        model.save(model_path)
+        model.save(model_path_save)
+        artifact = wandb.Artifact('trained-model', type='model')
+        artifact.add_file(model_path_save)
+        wandb.log_artifact(artifact)
+
+        # End the W&B run at the end of the training
+        wandb.finish()
         print("------- saved Model -------")
     except:
         print("------- can not save Model -------")

@@ -11,7 +11,7 @@ import torch
 import glob
 
 try:
-    model_path = "models/sac_aloha_Simple2.zip"
+    model_path = "models/sac_1devX3.zip"
     env = gym.make("gym_aloha/AlohaSimple")
     video_length = 300 # number of frames in the video
 
@@ -32,8 +32,11 @@ try:
     for i in range(video_length):
         # get model predicted action
         action, _states = model.predict(observation, deterministic=True)
+        #physics = env.unwrapped._physics
+        #print("qpos:", physics.data.qpos)
         action[6:] = 0
         observation, reward, terminated, truncated, info = env.step(action)
+        print(reward)
         image = env.render()
         frames.append(image)
 
