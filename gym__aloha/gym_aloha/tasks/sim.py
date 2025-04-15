@@ -243,7 +243,7 @@ class SimpleTask(BimanualViperXTask):
 
     def __init__(self, random=None):
         super().__init__(random=random)
-        self.max_reward = 6
+        self.max_reward = 1000
 
     def initialize_episode(self, physics):
         """Sets the state of the environment at the start of each episode."""
@@ -253,7 +253,6 @@ class SimpleTask(BimanualViperXTask):
         rand_range = 0.5
         rand_offset_l = np.random.uniform(-rand_range, rand_range, 6)
         saps = np.asarray(START_ARM_POSE_SIMPLE)
-        print(f"{saps=}")
         saps[:6]= saps[:6] + rand_offset_l
         
         with physics.reset_context():
@@ -282,4 +281,6 @@ class SimpleTask(BimanualViperXTask):
 
         # reward = 6 - 1*np.sum(physics.data.qpos[:6]**2)
         reward = 1/(np.sum(np.abs(physics.data.qpos[:6])))
+        if reward > 1000:
+            reward = 1000
         return reward
