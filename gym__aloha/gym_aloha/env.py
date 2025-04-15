@@ -13,6 +13,8 @@ from gym_aloha.constants import (
     ASSETS_DIR,
     DT,
     JOINTS,
+    START_ARM_POSE,
+    START_ARM_POSE_SIMPLE,
 )
 from gym_aloha.tasks.sim import BOX_POSE, InsertionTask, TransferCubeTask, SimpleTask
 from gym_aloha.tasks.sim_end_effector import (
@@ -258,10 +260,12 @@ class SimpleAlohaEnv(gym.Env):
         
         self._env = self._make_env_task(self.task)
         self.last_action = None
-        self.speed_limit = 0.01 # m/s
+        self.speed_limit = 0.05 # rad/s
+        self.max_delta_per_step = self.speed_limit * DT
         self.last_reward = 0
         self.tolleranz   = 0.05
         self.max_reward_since=0
+        self.action_is_vel_not_pos = True 
         
         # fetch max_episode_steps from the environment registry
         self.max_episode_steps = gym.envs.registry["gym_aloha/AlohaSimple"].max_episode_steps
@@ -299,7 +303,7 @@ class SimpleAlohaEnv(gym.Env):
                 }
             )
 
-        self.action_space = spaces.Box(low=-1, high=1, shape=(len(ACTIONS),), dtype=np.float32)
+        self.action_space = spaces.Box(low=-0.1, high=0.1, shape=(len(ACTIONS),), dtype=np.float32)
 
     def render(self):
         return self._render(visualize=True)
@@ -372,23 +376,31 @@ class SimpleAlohaEnv(gym.Env):
         return action
                        
     def tanH_speed(self, action):
-        # Calculate delta between current and last action
-        delta = action - self.last_action if self.last_action is not None else 0
+        # Get the current position of the robot
+        pos = self._env._task.get_qpos(self._env.physics)
+        # Calculate delta between proposed action (as a position) and last pos
+        delta = action - pos
         # Scale delta using tanh to limit its range within [-speed_limit, speed_limit]
-        scaled_delta = np.tanh(delta / self.speed_limit) * self.speed_limit
+        scaled_delta = np.tanh(delta / self.max_delta_per_step) * self.max_delta_per_step
         # Update action by adding the scaled delta
-        action = self.last_action + scaled_delta if self.last_action is not None else action
-        # Store the last action
-        self.last_action = action
+        action = pos + scaled_delta
+        return action
+    
+    def tanH(self, action):
+        action = np.tanh(action/self.speed_limit) * self.speed_limit
         return action
         
     def step(self, action):
         assert action.ndim == 1
         # TODO(rcadene): add info["is_success"] and info["success"] ?
         
-        # speed limit if wanted
-        # action = self.clip_speed(action)
-        action = self.tanH_speed(action)
+        if self.action_is_vel_not_pos:
+            pos = self._env._task.get_qpos(self._env.physics)
+            action = pos + self.tanH(action)*DT
+        else:
+            # speed limit if wanted
+            # action = self.clip_speed(action)
+            action = self.tanH_speed(action)
 
         # set every action value after position 5 to 0
         action[6:] = 0

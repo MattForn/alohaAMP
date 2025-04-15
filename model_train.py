@@ -47,8 +47,8 @@ ent_coef = 0.2
 buffer_size = 2**14
 gradient_steps = 1
 train_freq: Union[int, Tuple[int, str]] = (1, "step")
-model_path_save = "models/sac_1devX3.zip"
-model_path_load = "models/sac_1devX3.zip"
+model_path_save = "models/sac_Speed3.zip"
+model_path_load = "models/sac_Speed3.zip"
 load_saved_model = False
 load_saved_replay_buffer = False
 total_learning_timesteps = 100000000
@@ -61,7 +61,7 @@ video_length = 100 # number of frames in the video
 
 # Initialize W&B project
 wandb.init(
-    project="aloha-simple-1devX",  # Replace with your project name
+    project="aloha-simple-V_cont",  # Replace with your project name
     config={
         "algorithm": "SAC",
         "env": "SimpleAloha",

@@ -250,9 +250,10 @@ class SimpleTask(BimanualViperXTask):
 
         # reset qpos and control for the arms only
         # add a random offset to the left arm
-        rand_range = 0.1
+        rand_range = 0.5
         rand_offset_l = np.random.uniform(-rand_range, rand_range, 6)
-        saps = START_ARM_POSE_SIMPLE
+        saps = np.asarray(START_ARM_POSE_SIMPLE)
+        print(f"{saps=}")
         saps[:6]= saps[:6] + rand_offset_l
         
         with physics.reset_context():

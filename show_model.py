@@ -11,7 +11,7 @@ import torch
 import glob
 
 try:
-    model_path = "models/sac_1devX3.zip"
+    model_path = "models/sac_Speed3.zip"
     env = gym.make("gym_aloha/AlohaSimple")
     video_length = 300 # number of frames in the video
 
