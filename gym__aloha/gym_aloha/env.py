@@ -90,7 +90,7 @@ class AlohaEnv(gym.Env):
                 }
             )
 
-        self.action_space = spaces.Box(low=-1, high=1, shape=(len(ACTIONS),), dtype=np.float32)
+        self.action_space = spaces.Box(low=-0.15, high=0.15, shape=(len(ACTIONS),), dtype=np.float32)
 
     def render(self):
         return self._render(visualize=True)
@@ -260,7 +260,7 @@ class SimpleAlohaEnv(gym.Env):
         
         self._env = self._make_env_task(self.task)
         self.last_action = None
-        self.speed_limit = 0.05 # rad/s
+        self.speed_limit = 0.80 # rad/s
         self.max_delta_per_step = self.speed_limit * DT
         self.last_reward = 0
         self.tolleranz   = 0.05
@@ -303,7 +303,7 @@ class SimpleAlohaEnv(gym.Env):
                 }
             )
 
-        self.action_space = spaces.Box(low=-0.1, high=0.1, shape=(len(ACTIONS),), dtype=np.float32)
+        self.action_space = spaces.Box(low=-0.9, high=0.9, shape=(len(ACTIONS),), dtype=np.float32)
 
     def render(self):
         return self._render(visualize=True)

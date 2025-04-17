@@ -240,20 +240,32 @@ class InsertionTask(BimanualViperXTask):
         return reward
     
 class SimpleTask(BimanualViperXTask):
+    
+    
 
     def __init__(self, random=None):
         super().__init__(random=random)
-        self.max_reward = 1000
+        self.max_reward = 6
+        self.rand_init_position_mode = 2
+        """ 0 = none, 1 = unform, 2 = + or - random_init_range"""
+        self.random_init_range = 0.3
 
     def initialize_episode(self, physics):
         """Sets the state of the environment at the start of each episode."""
 
         # reset qpos and control for the arms only
-        # add a random offset to the left arm
-        rand_range = 0.5
-        rand_offset_l = np.random.uniform(-rand_range, rand_range, 6)
-        saps = np.asarray(START_ARM_POSE_SIMPLE)
-        saps[:6]= saps[:6] + rand_offset_l
+        if self.rand_init_position_mode == 0:
+            saps = np.asarray(START_ARM_POSE_SIMPLE)
+        elif self.rand_init_position_mode == 1:
+            # add a random offset to the left arm
+            rand_offset_l = np.random.uniform(-self.random_init_range, self.random_init_range, 6)
+            saps = np.asarray(START_ARM_POSE_SIMPLE)
+            saps[:6]= saps[:6] + rand_offset_l
+        elif self.rand_init_position_mode == 2:
+            # add a random offset to the left arm
+            rand_offset_l = np.random.choice([-self.random_init_range, self.random_init_range], 6)
+            saps = np.asarray(START_ARM_POSE_SIMPLE)
+            saps[:6]= saps[:6] + rand_offset_l
         
         with physics.reset_context():
             physics.named.data.qpos[:16] = saps

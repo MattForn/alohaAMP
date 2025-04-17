@@ -1,5 +1,5 @@
 import os
-#from xvfbwrapper import Xvfb
+#from xvfbwrapper import Xvfbp
 
 # Start Xvfb
 #vdisplay = Xvfb()
@@ -39,19 +39,20 @@ from typing import Any, Dict, List, Optional, Type, Union
 # Parameters
 batch_size = 256
 verbose = 0
-learning_rate = 0.0006
+learning_rate = 0.002 #0.0006
 tau = 0.005
 gamma = 0.99
-target_entropy = -14
-ent_coef = 0.2
-buffer_size = 2**14
-gradient_steps = 1
+calc_tatget_entropy_from_action_space = False #overrights the followiung
+target_entropy = -7 #"auto" #-14
+ent_coef ='auto'
+buffer_size = 2**18
+gradient_steps = 3
 train_freq: Union[int, Tuple[int, str]] = (1, "step")
-model_path_save = "models/sac_Speed3.zip"
-model_path_load = "models/sac_Speed3.zip"
+model_path_save = "models/sac_Speed4.zip"
+model_path_load = "models/sac_Speed4.zip"
 load_saved_model = False
 load_saved_replay_buffer = False
-total_learning_timesteps = 100000000
+total_learning_timesteps = 10**9
 save_freq = 10000
 save_replay_buffer=True
 make_video_after_learning = True
@@ -61,7 +62,7 @@ video_length = 100 # number of frames in the video
 
 # Initialize W&B project
 wandb.init(
-    project="aloha-simple-V_cont",  # Replace with your project name
+    project="aloha-simple-linear_reward",  # Replace with your project name
     config={
         "algorithm": "SAC",
         "env": "SimpleAloha",
@@ -75,8 +76,9 @@ try:
     env = gym.make("gym_aloha/AlohaSimple")
     #env = make_vec_env("gym_aloha/AlohaSimple", n_envs=4)
 
-    target_entropy = -env.action_space.shape[0]
-    print(f"setting target_entropy: {target_entropy}")
+    if calc_tatget_entropy_from_action_space:
+        target_entropy = -env.action_space.shape[0]
+        print(f"setting target_entropy: {target_entropy}")
     
     #load the last saved model in models with the graetest amounts of steps
     if load_saved_model:
@@ -94,13 +96,15 @@ try:
         print('------- creating new Model -------')
             
         # Berechne Target Entropy
-        action_space_dim = np.prod(env.action_space.shape)
-        target_entropy = -action_space_dim
+        if calc_tatget_entropy_from_action_space:
+            action_space_dim = np.prod(env.action_space.shape)
+            target_entropy = -action_space_dim
     
         model = stable_baselines3.SAC("MultiInputPolicy",
                                     env,
                                     verbose=verbose,
                                     buffer_size=buffer_size,
+                                    learning_starts=batch_size*10,
                                     batch_size=batch_size,
                                     train_freq=train_freq,
                                     learning_rate=learning_rate,
@@ -108,7 +112,7 @@ try:
                                     tau=tau,
                                     gamma=gamma,
                                     target_entropy=target_entropy,
-                                    ent_coef='auto',
+                                    ent_coef=ent_coef,
                                     device="cuda",
                                     )
         
