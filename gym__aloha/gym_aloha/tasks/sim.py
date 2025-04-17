@@ -13,7 +13,6 @@ from gym_aloha.constants import (
 
 BOX_POSE = [None]  # to be changed from outside
 
-
 """
 Environment for simulated robot bi-manual manipulation, with joint position control
 Action space:      [left_arm_qpos (6),             # absolute joint position
@@ -101,7 +100,6 @@ class BimanualViperXTask(base.Task):
         # return whether left gripper is holding the box
         raise NotImplementedError
 
-
 class TransferCubeTask(BimanualViperXTask):
     def __init__(self, random=None):
         super().__init__(random=random)
@@ -149,7 +147,6 @@ class TransferCubeTask(BimanualViperXTask):
         if touch_left_gripper and not touch_table:  # successful transfer
             reward = 4
         return reward
-
 
 class InsertionTask(BimanualViperXTask):
     def __init__(self, random=None):
@@ -243,21 +240,14 @@ class SimpleTask(BimanualViperXTask):
 
     def __init__(self, random=None):
         super().__init__(random=random)
-        self.max_reward = 6
+        self.max_reward = 1000
 
     def initialize_episode(self, physics):
         """Sets the state of the environment at the start of each episode."""
 
-        # reset qpos and control for the arms only
-        # add a random offset to the left arm
-        rand_offset_l = np.random.normal(START_ARM_POSE_SIMPLE[:6], 0.2)
-        saps = START_ARM_POSE_SIMPLE
-        saps[:6]= saps[:6] + rand_offset_l
-        
         with physics.reset_context():
-            physics.named.data.qpos[:16] = saps
-            np.copyto(physics.data.ctrl, saps)
-
+            physics.named.data.qpos[:16] = START_ARM_POSE_SIMPLE
+            np.copyto(physics.data.ctrl, START_ARM_POSE_SIMPLE)
         super().initialize_episode(physics)
 
     @staticmethod
@@ -269,16 +259,16 @@ class SimpleTask(BimanualViperXTask):
 
         reward = 0
 
-        # for every joint within the left arm
-        '''
-        for i in range(6):
-            if physics.data.qpos[i] > 0.1 and physics.data.qpos[i] < -0.1:
-                reward -= 10
+        for i in range(2):
+            reward += 1/np.sum(physics.data.qpos[i] ** 2)
+            
+        # reward = 1/np.sum(physics.data.qpos[0] ** 2)
 
-        for i in range(6):
-            if physics.data.qpos[i] < 0.1 and physics.data.qpos[i] > -0.1:
-                reward += 1
-        '''
-        for i in range(6):
-            reward = reward + 1 - np.power(physics.data.qpos[i],2)
+        if reward > self.max_reward:
+            reward = self.max_reward
+
+        for i in range (2):
+            if physics.data.qvel[i] > 0.01:
+                reward = 0
+
         return reward

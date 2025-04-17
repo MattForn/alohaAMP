@@ -50,7 +50,7 @@ class AlohaEnv(gym.Env):
         
         self._env = self._make_env_task(self.task)
         self.last_action = None
-        self.speed_limit = 0.1 # m/s
+        self.speed_limit = 0.05 # m/s
     
         # fetch max_episode_steps from the environment registry
         self.max_episode_steps = gym.envs.registry["gym_aloha/AlohaSimple"].max_episode_steps
@@ -258,10 +258,10 @@ class SimpleAlohaEnv(gym.Env):
         
         self._env = self._make_env_task(self.task)
         self.last_action = None
-        self.speed_limit = 0.01 # m/s
+        self.speed_limit = 0.05 # m/s
         self.last_reward = 0
         self.tolleranz   = 0.5
-        self.max_reward_since=0
+        self.max_reward_since = 0
         
         # fetch max_episode_steps from the environment registry
         self.max_episode_steps = gym.envs.registry["gym_aloha/AlohaSimple"].max_episode_steps
@@ -280,8 +280,8 @@ class SimpleAlohaEnv(gym.Env):
                         }
                     ),
                     "agent_posi": spaces.Box(
-                        low=-10.0,
-                        high=10.0,
+                        low=-10,
+                        high=10,
                         shape=(len(JOINTS),),
                         dtype=np.float64,
                     ),
@@ -291,15 +291,15 @@ class SimpleAlohaEnv(gym.Env):
             self.observation_space = spaces.Dict(
                 {
                     "agent_pos": spaces.Box(
-                        low=-10.0,
-                        high=10.0,
+                        low=-3.14,
+                        high=3.14,
                         shape=(len(JOINTS),),
                         dtype=np.float64,
                     ),
                 }
             )
 
-        self.action_space = spaces.Box(low=-1, high=1, shape=(len(ACTIONS),), dtype=np.float32)
+        self.action_space = spaces.Box(low=-0.1, high=0.1, shape=(len(ACTIONS),), dtype=np.float32)
 
     def render(self):
         return self._render(visualize=True)
@@ -363,13 +363,6 @@ class SimpleAlohaEnv(gym.Env):
         observation = self._format_raw_obs(raw_obs.observation)
         info = {"is_success": False}
         return observation, info
-
-    def clip_speed(self, action):
-        delta = action - self.last_action if self.last_action is not None else 0
-        delta = np.clip(delta, -self.speed_limit, self.speed_limit)
-        action = self.last_action + delta if self.last_action is not None else action
-        self.last_action = action
-        return action
                        
     def tanH_speed(self, action):
         # Calculate delta between current and last action
@@ -384,15 +377,12 @@ class SimpleAlohaEnv(gym.Env):
         
     def step(self, action):
         assert action.ndim == 1
-        # TODO(rcadene): add info["is_success"] and info["success"] ?
-        
-        # speed limit if wanted
-        # action = self.clip_speed(action)
         action = self.tanH_speed(action)
 
-        # set every action value after position 5 to 0
-        action[6:] = 0
+        # set every action value after position 1 to 0
+        action[2:] = 0
         action[7] = np.pi
+        action[9] = 0.5
 
         _, reward, _, raw_obs = self._env.step(action)
         
@@ -403,25 +393,9 @@ class SimpleAlohaEnv(gym.Env):
             
         # TODO(rcadene): add an enum
         terminated = is_success = False
-        if reward >= 6-self.tolleranz:
-            reward = reward + 5
-            self.max_reward_since+=1
-            if self.max_reward_since >= 3:
-                terminated = is_success = True
-                reward = 6*self.max_episode_steps - 6*self._env._step_count
-        else:
-            #if self.max_reward_since >=1:
-            #    reward = -5
-            self.max_reward_since=0
-            
-            
-        #TODO: WAS IST DAS DA ÜBER MIR
 
         info = {"is_success": is_success}
-
         observation = self._format_raw_obs(raw_obs)
-
-        self.last_reward = reward
         return observation, reward, terminated, truncated, info
 
     def close(self):
