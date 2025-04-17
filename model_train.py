@@ -50,7 +50,7 @@ total_learning_timesteps = 1000000
 save_freq = 10000
 save_replay_buffer=False
 make_video_after_learning = True
-video_length = 100 # number of frames in the video
+video_length = 500 # number of frames in the video
 
 
 
