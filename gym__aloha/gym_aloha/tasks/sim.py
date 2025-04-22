@@ -13,7 +13,6 @@ from gym_aloha.constants import (
 
 BOX_POSE = [None]  # to be changed from outside
 
-
 """
 Environment for simulated robot bi-manual manipulation, with joint position control
 Action space:      [left_arm_qpos (6),             # absolute joint position
@@ -101,7 +100,6 @@ class BimanualViperXTask(base.Task):
         # return whether left gripper is holding the box
         raise NotImplementedError
 
-
 class TransferCubeTask(BimanualViperXTask):
     def __init__(self, random=None):
         super().__init__(random=random)
@@ -149,7 +147,6 @@ class TransferCubeTask(BimanualViperXTask):
         if touch_left_gripper and not touch_table:  # successful transfer
             reward = 4
         return reward
-
 
 class InsertionTask(BimanualViperXTask):
     def __init__(self, random=None):
@@ -267,9 +264,14 @@ class SimpleTask(BimanualViperXTask):
             saps[:6]= saps[:6] + rand_offset_l
         
         with physics.reset_context():
-            physics.named.data.qpos[:16] = saps
-            np.copyto(physics.data.ctrl, saps)
+            for i in range(6):
+                START_ARM_POSE_SIMPLE[i] = np.random.uniform(-0.15, 0.15)
+            START_ARM_POSE_SIMPLE[0] = np.random.uniform(-np.pi, np.pi)
+            START_ARM_POSE_SIMPLE[8] = np.pi
+            START_ARM_POSE_SIMPLE[9] = 0.5
 
+            physics.named.data.qpos[:16] = START_ARM_POSE_SIMPLE
+            np.copyto(physics.data.ctrl, START_ARM_POSE_SIMPLE)
         super().initialize_episode(physics)
 
     @staticmethod
@@ -290,8 +292,8 @@ class SimpleTask(BimanualViperXTask):
         #     if physics.data.qpos[i] < 0.3 and physics.data.qpos[i] > -0.3:
         #         reward += 1
 
-        #reward = 6 - 1*np.sum(physics.data.qpos[:6]**2)
-        reward = 6 - 4*np.sum(np.abs(physics.data.qpos[:6]))
+        #reward = self.max_reward - 1*np.sum(physics.data.qpos[:6]**2)
+        reward = self.max_reward - 4*np.sum(np.abs(physics.data.qpos[:6]))
         # reward = 1/(np.sum(np.abs(physics.data.qpos[:6])))
         # if reward > 1000:
         #     reward = 1000

@@ -34,26 +34,29 @@ import glob
 from stable_baselines3.sac.policies import SACPolicy
 from gymnasium import spaces
 from stable_baselines3.common.type_aliases import Schedule
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any, Dict, List, Optional, Type, Union, Tuple
 
 # Parameters
 batch_size = 256
 verbose = 0
 buffer_size = 2**22
+learning_rate = 0.0002
+tau = 0.005
+gamma = 0.99
+target_entropy = -14
+ent_coef = "auto" #0.2
 load_saved_model = False
 load_saved_replay_buffer = False
-total_learning_timesteps = 10000000
-save_freq = 10000
+total_learning_timesteps = 50000
+gradient_steps = 9
+train_freq = (3, "step")
+save_freq = 1000
 save_replay_buffer=False
 del_old_checkpoints=True
-make_video_after_learning = False
-video_length = 100 # number of frames in the video
-
-
 
 # Initialize W&B project
 wandb.init(
-    project="aloha-insertion",  # Replace with your project name
+    project="simple_aloha_env",
     config={
         "algorithm": "SAC",
         "env": "SimpleAloha",
@@ -69,19 +72,15 @@ try:
 
     #observation, info = env.reset()
     
-    
     #TODO: the model cant use the saved Buffer if more than one env's are used
 
     #load the last saved model in models with the graetest amounts of steps
     if load_saved_model:
         try:
             #find the last saved model
-            directory = "models/*"
+            directory = "/media/local/fornepaetz/models/*"
             list_of_files = glob.glob(directory)
             list_of_files_zip = [file for file in list_of_files if file.endswith('.zip')]
-            list_of_files_pkl = [file for file in list_of_files if file.endswith('.pkl')]
-            latest_zip_file = max(list_of_files_zip, key=os.path.getctime)
-            latest_pkl_file = max(list_of_files_pkl, key=os.path.getctime)
             latest_zip_file = max(list_of_files_zip, key=os.path.getctime)
             print(f"trying to load a model: {latest_zip_file}")
             model = stable_baselines3.SAC.load(latest_zip_file, env=env, verbose=1)
@@ -108,11 +107,17 @@ try:
                                     buffer_size=buffer_size,
                                     batch_size=batch_size,
                                     device="cuda",
-                                    ent_coef=0.1)
+                                    ent_coef=ent_coef,
+                                    gradient_steps=gradient_steps,
+                                    train_freq=train_freq,
+                                    learning_rate=learning_rate,
+                                    tau=tau,
+                                    gamma=gamma,
+                                    target_entropy=target_entropy)
         
         
         # Setze die gewünschte Target Entropy
-        model.target_entropy = target_entropy
+        model.target_entropy = float(target_entropy)
 
     if load_saved_replay_buffer:
         try:
@@ -128,7 +133,7 @@ try:
                 print('------- cant load Replay Buffer -------')
                 print(e)
 
-    new_logger = configure("models/logs", ["stdout", "csv", "tensorboard"])
+    new_logger = configure("/media/local/fornepaetz/models/logs", ["stdout", "csv", "tensorboard"])
     model.set_logger(new_logger)
 
     class WandbCallback(BaseCallback):
@@ -136,12 +141,10 @@ try:
             super(WandbCallback, self).__init__(verbose)
 
         def _on_step(self) -> bool:
+
             # Log training metrics to W&B
             wandb.log({
-                "step": self.num_timesteps,
                 "reward": self.locals["rewards"].mean(),
-                #"episode_length": self.locals["episode_lengths"].mean(),
-                "loss": self.locals.get("loss", 0),
                 "actor loss": self.model.logger.name_to_value["train/actor_loss"],
                 "critic loss": self.model.logger.name_to_value["train/critic_loss"],
                 "ent_coef": self.model.logger.name_to_value["train/ent_coef"],
@@ -172,8 +175,8 @@ try:
                 return False
 
     # Use the custom callback
-    ecc = ErrorCatching_Wandb_Callback(save_freq=save_freq, save_path='./models/',
-                                                    name_prefix='sac_ConvNext_aloha',
+    ecc = ErrorCatching_Wandb_Callback(save_freq=save_freq, save_path='/media/local/fornepaetz/models/',
+                                                    name_prefix='sac_aloha_simple',
                                                     save_replay_buffer=save_replay_buffer,
                                                     del_old_checkpoints=del_old_checkpoints)
     wandb_callback = WandbCallback(verbose=1)
@@ -182,7 +185,7 @@ try:
     model.learn(total_timesteps=total_learning_timesteps, 
                 callback=[ecc, wandb_callback])
     # Save the model and log it to W&B as an artifact
-    model_path = "models/sac_ConvNext_aloha.zip"
+    model_path = "/media/local/fornepaetz/models/sac_aloha_simple.zip"
     model.save(model_path)
 
     artifact = wandb.Artifact('trained-model', type='model')
@@ -191,33 +194,37 @@ try:
 
     # End the W&B run at the end of the training
     wandb.finish()
-    
-    if make_video_after_learning:
-        #---------------Animation----------------
-        frames = []
-        observation, info = env.reset()
-        # loop for acting
-        for i in range(video_length):
-            # get model predicted action
-            action, _states = model.predict(observation, deterministic=True)
-            
-            #action = close_pose
-            observation, reward, terminated, truncated, info = env.step(action)
-            print(np.max(observation["top"]))
-            #print(np.shape(observation["top"]))
-            #print(type(observation["top"]))
-            #print("reward: ", reward)
-            image = env.render()
-            frames.append(image)
-
-            if terminated or truncated:
-                observation, info = env.reset()
-        filename = "videos/example" + str(model._total_timesteps) + ".mp4"
-        imageio.mimsave(filename, np.stack(frames), fps=25)
-
     env.close()
 
 finally:
-    # Stop Xvfb
-    print("stopping Xvfb_____BECAUSE YOU STOPPED MEEEEEEEE!")
+    try:
+        model_path = "/media/local/fornepaetz/models/sac_aloha_simple.zip"
+        model.save(model_path)
+        print('------- successfully saved Model -------')
+        print("model saved to: ", model_path)
+        artifact = wandb.Artifact('trained-model', type='model')
+        artifact.add_file(model_path)
+        wandb.log_artifact(artifact)
+        wandb.finish()
+        env.close()
+   
+    except:
+        pass
+
+    print("Ich stoppe nun. Ich wuensche Ihnen noch einen schoenendv<senv<!")
     vdisplay.stop()
+
+
+
+'''
+Epsiodische Tasks
+
+Demos in Replaybuffer
+
+(Live Corrections)
+(On Policy Learning probieren)
+
+Das Wackeln ist typisches verhalten für wenn das damping nicht richtig eingestellt ist 
+und/oder Fehler in der Jakobimatrix anstehen
+Mujoco müsste die Jakobimatrix aber richtig berechnen und zur Verfügung stellen
+'''

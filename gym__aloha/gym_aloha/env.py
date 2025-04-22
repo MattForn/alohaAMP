@@ -20,6 +20,7 @@ from gym_aloha.tasks.sim import BOX_POSE, InsertionTask, TransferCubeTask, Simpl
 from gym_aloha.tasks.sim_end_effector import (
     InsertionEndEffectorTask,
     TransferCubeEndEffectorTask,
+    SimpleEffectorTask,
 )
 from gym_aloha.utils import sample_box_pose, sample_insertion_pose
 
@@ -52,7 +53,7 @@ class AlohaEnv(gym.Env):
         
         self._env = self._make_env_task(self.task)
         self.last_action = None
-        self.speed_limit = 0.1 # m/s
+        self.speed_limit = 0.05 # m/s
     
         # fetch max_episode_steps from the environment registry
         self.max_episode_steps = gym.envs.registry["gym_aloha/AlohaSimple"].max_episode_steps
@@ -124,6 +125,10 @@ class AlohaEnv(gym.Env):
             xml_path = ASSETS_DIR / "bimanual_viperx_transfer_cube.xml"
             physics = mujoco.Physics.from_xml_path(str(xml_path))
             task = SimpleTask()
+        elif task_name == "simple_ende_ffector":
+            xml_path = ASSETS_DIR / "bimanual_viperx_simple_endeffector.xml"
+            physics = mujoco.Physics.from_xml_path(str(xml_path))
+            task = SimpleEffectorTask()
         elif task_name == "insertion":
             xml_path = ASSETS_DIR / "bimanual_viperx_insertion.xml"
             physics = mujoco.Physics.from_xml_path(str(xml_path))
@@ -262,9 +267,7 @@ class SimpleAlohaEnv(gym.Env):
         self.last_action = None
         self.speed_limit = 0.80 # rad/s
         self.max_delta_per_step = self.speed_limit * DT
-        self.last_reward = 0
         self.tolleranz   = 0.05
-        self.max_reward_since=0
         self.action_is_vel_not_pos = True 
         
         # fetch max_episode_steps from the environment registry
@@ -367,32 +370,20 @@ class SimpleAlohaEnv(gym.Env):
         observation = self._format_raw_obs(raw_obs.observation)
         info = {"is_success": False}
         return observation, info
-
-    def clip_speed(self, action):
-        delta = action - self.last_action if self.last_action is not None else 0
-        delta = np.clip(delta, -self.speed_limit, self.speed_limit)
-        action = self.last_action + delta if self.last_action is not None else action
-        self.last_action = action
-        return action
                        
     def tanH_speed(self, action):
-        # Get the current position of the robot
         pos = self._env._task.get_qpos(self._env.physics)
-        # Calculate delta between proposed action (as a position) and last pos
         delta = action - pos
-        # Scale delta using tanh to limit its range within [-speed_limit, speed_limit]
         scaled_delta = np.tanh(delta / self.max_delta_per_step) * self.max_delta_per_step
-        # Update action by adding the scaled delta
         action = pos + scaled_delta
         return action
     
     def tanH(self, action):
         action = np.tanh(action/self.speed_limit) * self.speed_limit
         return action
-        
+
     def step(self, action):
         assert action.ndim == 1
-        # TODO(rcadene): add info["is_success"] and info["success"] ?
         
         if self.action_is_vel_not_pos:
             pos = self._env._task.get_qpos(self._env.physics)
@@ -404,36 +395,19 @@ class SimpleAlohaEnv(gym.Env):
         # set every action value after position 5 to 0
         action[6:] = 0
         action[7] = np.pi
+        action[9] = 0.5
 
         _, reward, _, raw_obs = self._env.step(action)
         
-        # check if episode is truncated after max_episode_steps
         truncated = False
         if self._env._step_count >= self.max_episode_steps:
             truncated = True
             
         # TODO(rcadene): add an enum
         terminated = is_success = False
-        # if reward >= 6-self.tolleranz:
-        #     self.max_reward_since+=1
-        #     # if self.max_reward_since >= 10:
-        #     #     terminated = is_success = True
-        # else:
-        #     if self.max_reward_since >=1:
-        #         reward = -10
-        #     self.max_reward_since=0
-            
-            
-            
-        # if reward >= 6-self.tolleranz and self.last_reward >= 6-self.tolleranz:
-        #     reward = 100*self.max_reward_since
-            
 
         info = {"is_success": is_success}
-
         observation = self._format_raw_obs(raw_obs)
-
-        # self.last_reward = reward
         return observation, reward, terminated, truncated, info
 
     def close(self):
