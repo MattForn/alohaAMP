@@ -18,6 +18,7 @@ from gym_aloha.tasks.sim import BOX_POSE, InsertionTask, TransferCubeTask, Simpl
 from gym_aloha.tasks.sim_end_effector import (
     InsertionEndEffectorTask,
     TransferCubeEndEffectorTask,
+    SimpleEffectorTask,
 )
 from gym_aloha.utils import sample_box_pose, sample_insertion_pose
 
@@ -122,6 +123,10 @@ class AlohaEnv(gym.Env):
             xml_path = ASSETS_DIR / "bimanual_viperx_transfer_cube.xml"
             physics = mujoco.Physics.from_xml_path(str(xml_path))
             task = SimpleTask()
+        elif task_name == "simple_ende_ffector":
+            xml_path = ASSETS_DIR / "bimanual_viperx_simple_endeffector.xml"
+            physics = mujoco.Physics.from_xml_path(str(xml_path))
+            task = SimpleEffectorTask()
         elif task_name == "insertion":
             xml_path = ASSETS_DIR / "bimanual_viperx_insertion.xml"
             physics = mujoco.Physics.from_xml_path(str(xml_path))
@@ -258,10 +263,12 @@ class SimpleAlohaEnv(gym.Env):
         
         self._env = self._make_env_task(self.task)
         self.last_action = None
-        self.speed_limit = 0.05 # m/s
+        self.speed_limit = 0.1
         self.last_reward = 0
         self.tolleranz   = 0.5
         self.max_reward_since = 0
+        self.action_is_vel_not_pos = False
+        self.max_delta_per_step = 0.1
         
         # fetch max_episode_steps from the environment registry
         self.max_episode_steps = gym.envs.registry["gym_aloha/AlohaSimple"].max_episode_steps
@@ -365,28 +372,33 @@ class SimpleAlohaEnv(gym.Env):
         return observation, info
                        
     def tanH_speed(self, action):
-        # Calculate delta between current and last action
-        delta = action - self.last_action if self.last_action is not None else 0
-        # Scale delta using tanh to limit its range within [-speed_limit, speed_limit]
-        scaled_delta = np.tanh(delta / self.speed_limit) * self.speed_limit
-        # Update action by adding the scaled delta
-        action = self.last_action + scaled_delta if self.last_action is not None else action
-        # Store the last action
-        self.last_action = action
+        pos = self._env._task.get_qpos(self._env.physics)
+        delta = action - pos
+        scaled_delta = np.tanh(delta / self.max_delta_per_step) * self.max_delta_per_step
+        action = pos + scaled_delta
         return action
-        
+    
+    def tanH(self, action):
+        action = np.tanh(action/self.speed_limit) * self.speed_limit
+        return action
+
     def step(self, action):
         assert action.ndim == 1
-        action = self.tanH_speed(action)
+        
+        if self.action_is_vel_not_pos:
+            pos = self._env._task.get_qpos(self._env.physics)
+            action = pos + self.tanH(action)*DT
+        else:
+            action = self.tanH_speed(action)
 
-        # set every action value after position 1 to 0
-        action[2:] = 0
+        _, reward, _, raw_obs = self._env.step(action)
+
+        action[7:] = 0
         action[7] = np.pi
         action[9] = 0.5
 
         _, reward, _, raw_obs = self._env.step(action)
         
-        # check if episode is truncated after max_episode_steps
         truncated = False
         if self._env._step_count >= self.max_episode_steps:
             truncated = True

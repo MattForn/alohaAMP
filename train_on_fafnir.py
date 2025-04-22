@@ -40,6 +40,11 @@ from typing import Any, Dict, List, Optional, Type, Union, Tuple
 batch_size = 256
 verbose = 0
 buffer_size = 2**22
+learning_rate = 0.0002
+tau = 0.005
+gamma = 0.99
+target_entropy = -14
+ent_coef = "auto" #0.2
 load_saved_model = False
 load_saved_replay_buffer = False
 total_learning_timesteps = 50000
@@ -102,9 +107,13 @@ try:
                                     buffer_size=buffer_size,
                                     batch_size=batch_size,
                                     device="cuda",
-                                    ent_coef="auto",
+                                    ent_coef=ent_coef,
                                     gradient_steps=gradient_steps,
-                                    train_freq=train_freq)
+                                    train_freq=train_freq,
+                                    learning_rate=learning_rate,
+                                    tau=tau,
+                                    gamma=gamma,
+                                    target_entropy=target_entropy)
         
         
         # Setze die gewünschte Target Entropy
@@ -208,9 +217,14 @@ finally:
 
 
 '''
-Delta Actions einbinden und beschränken 
-Epsiodische Tasks 
+Epsiodische Tasks
+
 Demos in Replaybuffer
+
 (Live Corrections)
 (On Policy Learning probieren)
+
+Das Wackeln ist typisches verhalten für wenn das damping nicht richtig eingestellt ist 
+und/oder Fehler in der Jakobimatrix anstehen
+Mujoco müsste die Jakobimatrix aber richtig berechnen und zur Verfügung stellen
 '''
