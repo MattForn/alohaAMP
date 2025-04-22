@@ -241,14 +241,13 @@ class InsertionTask(BimanualViperXTask):
     
 class SimpleTask(BimanualViperXTask):
     
-    
 
     def __init__(self, random=None):
         super().__init__(random=random)
         self.max_reward = 6
-        self.rand_init_position_mode = 2
+        self.rand_init_position_mode = 1
         """ 0 = none, 1 = unform, 2 = + or - random_init_range"""
-        self.random_init_range = 0.3
+        self.random_init_range = 0.5
 
     def initialize_episode(self, physics):
         """Sets the state of the environment at the start of each episode."""
@@ -291,8 +290,9 @@ class SimpleTask(BimanualViperXTask):
         #     if physics.data.qpos[i] < 0.3 and physics.data.qpos[i] > -0.3:
         #         reward += 1
 
-        # reward = 6 - 1*np.sum(physics.data.qpos[:6]**2)
-        reward = 1/(np.sum(np.abs(physics.data.qpos[:6])))
-        if reward > 1000:
-            reward = 1000
+        #reward = 6 - 1*np.sum(physics.data.qpos[:6]**2)
+        reward = 6 - 4*np.sum(np.abs(physics.data.qpos[:6]))
+        # reward = 1/(np.sum(np.abs(physics.data.qpos[:6])))
+        # if reward > 1000:
+        #     reward = 1000
         return reward

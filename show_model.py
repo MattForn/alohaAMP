@@ -11,7 +11,7 @@ import torch
 import glob
 
 try:
-    model_path = "models/sac_Speed4.zip"
+    model_path = "models/sac_Speed5.zip"
     env = gym.make("gym_aloha/AlohaSimple")
     video_length = 300 # number of frames in the video
 
@@ -35,9 +35,9 @@ try:
         #physics = env.unwrapped._physics
         #print("qpos:", physics.data.qpos)
         action[6:] = 0
-        print("action:", action[:6])
+        #print("action:", action[:6])
         observation, reward, terminated, truncated, info = env.step(action)
-        print(reward)
+        #print(reward)
         image = env.render()
         frames.append(image)
 

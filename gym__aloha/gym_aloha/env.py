@@ -401,7 +401,6 @@ class SimpleAlohaEnv(gym.Env):
             # speed limit if wanted
             # action = self.clip_speed(action)
             action = self.tanH_speed(action)
-
         # set every action value after position 5 to 0
         action[6:] = 0
         action[7] = np.pi
