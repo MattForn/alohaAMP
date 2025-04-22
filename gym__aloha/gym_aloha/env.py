@@ -395,8 +395,6 @@ class SimpleAlohaEnv(gym.Env):
         # set every action value after position 5 to 0
         action[6:] = 0
         action[7] = np.pi
-        action[9] = 0.5
-
         _, reward, _, raw_obs = self._env.step(action)
         
         truncated = False

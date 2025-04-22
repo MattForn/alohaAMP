@@ -50,7 +50,7 @@ gradient_steps = 3
 train_freq: Union[int, Tuple[int, str]] = (1, "step")
 model_path_save = "models/sac_Speed5.zip"
 model_path_load = "models/sac_Speed5.zip"
-load_saved_model = True
+load_saved_model = False
 load_saved_replay_buffer = False
 total_learning_timesteps = 10**9
 save_freq = 10000
@@ -104,7 +104,7 @@ try:
                                     env,
                                     verbose=verbose,
                                     buffer_size=buffer_size,
-                                    learning_starts=batch_size*10,
+                                    learning_starts=batch_size*2,
                                     batch_size=batch_size,
                                     train_freq=train_freq,
                                     learning_rate=learning_rate,
@@ -144,10 +144,8 @@ try:
         def _on_step(self) -> bool:
             # Log training metrics to W&B
             wandb.log({
-                "step": self.num_timesteps,
                 "reward": self.locals["rewards"].mean(),
                 #"episode_length": self.locals["episode_lengths"].mean(),
-                "loss": self.locals.get("loss", 0),
                 "actor loss": self.model.logger.name_to_value["train/actor_loss"],
                 "critic loss": self.model.logger.name_to_value["train/critic_loss"],
                 "ent_coef": self.model.logger.name_to_value["train/ent_coef"],

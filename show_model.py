@@ -9,17 +9,17 @@ from stable_baselines3.common.callbacks import CheckpointCallback, BaseCallback
 from stable_baselines3.common.env_util import make_vec_env
 import torch
 import glob
-from xvfbwrapper import Xvfb
+#from xvfbwrapper import Xvfb
 
 # Start Xvfb
-vdisplay = Xvfb()
-vdisplay.start()
+#vdisplay = Xvfb()
+#vdisplay.start()
 
 # Set the DISPLAY environment variable
-os.environ['DISPLAY'] = ':{}'.format(vdisplay.new_display)
+#os.environ['DISPLAY'] = ':{}'.format(vdisplay.new_display)
 
 # Set up EGL for headless rendering
-os.environ['MUJOCO_GL'] = 'egl'
+#os.environ['MUJOCO_GL'] = 'egl'
 
 try:
     env = gym.make("gym_aloha/AlohaSimple")
@@ -27,7 +27,7 @@ try:
 
     try:
         #find the last saved model
-        directory = "/media/local/fornepaetz/models/*"
+        directory = "models/*"
         list_of_files = glob.glob(directory)
         list_of_files_zip = [file for file in list_of_files if file.endswith('.zip')]
         latest_zip_file = max(list_of_files_zip, key=os.path.getctime)
@@ -60,7 +60,7 @@ try:
     a = model._total_timesteps
     scalar = 0
     list_scalar = ["", "K", "M", "B", "T", "P", "E", "Z", "Y"]
-    while a > 1000:
+    while a >= 1000:
         scalar += 1
         a = round(a/1000)
     scalar_Symbol = list_scalar[scalar]
@@ -73,4 +73,4 @@ try:
 
 finally:
     print("Weeeerbung Eeeende")
-    vdisplay.stop()
+    #vdisplay.stop()
