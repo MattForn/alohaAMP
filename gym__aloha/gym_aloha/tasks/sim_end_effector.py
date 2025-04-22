@@ -261,3 +261,33 @@ class InsertionEndEffectorTask(BimanualViperXEndEffectorTask):
         if pin_touched:  # successful insertion
             reward = 4
         return reward
+
+
+class SimpleEffectorTask(BimanualViperXEndEffectorTask):
+    def __init__(self, random=None):
+        super().__init__(random=random)
+        self.max_reward = 1000
+
+    def initialize_episode(self, physics):
+        """Sets the state of the environment at the start of each episode."""
+
+        with physics.reset_context():
+            physics.named.data.qpos[:16] = START_ARM_POSE_SIMPLE
+            np.copyto(physics.data.ctrl, START_ARM_POSE_SIMPLE)
+        super().initialize_episode(physics)
+
+    @staticmethod
+    def get_env_state(physics):
+        env_state = physics.data.qpos.copy()[:16]
+        return env_state
+
+    def get_reward(self, physics):
+
+        reward = 0
+
+        # TODO: implement reward function based on end effector position and velocity
+
+        if reward > self.max_reward:
+            reward = self.max_reward
+
+        return reward
