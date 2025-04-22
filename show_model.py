@@ -43,7 +43,16 @@ try:
 
         if terminated or truncated:
             observation, info = env.reset()
-    filename = "videos/example" + str(model._total_timesteps) + ".mp4"
+    
+    a = model._total_timesteps
+    scalar = 0
+    list_scalar = ["", "K", "M", "B", "T", "P", "E", "Z", "Y"]
+    while a > 1000:
+        scalar += 1
+        a = round(a/1000)
+    scalar_Symbol = list_scalar[scalar]
+        
+    filename = "videos/example" + str(a)+ str(scalar_Symbol)+".mp4"
     imageio.mimsave(filename, np.stack(frames), fps=25)
 
     env.close()
