@@ -45,11 +45,11 @@ gamma = 0.99
 calc_tatget_entropy_from_action_space = False #overrights the followiung
 target_entropy = -7 #"auto" #-14
 ent_coef ='auto'
-buffer_size = 2**18
+buffer_size = 2**20
 gradient_steps = 3
 train_freq: Union[int, Tuple[int, str]] = (1, "step")
-model_path_save = "models/sac_Speed5.zip"
-model_path_load = "models/sac_Speed5.zip"
+model_path_save = "models/sac_sparse.zip"
+model_path_load = "models/sac_sparse.zip"
 load_saved_model = False
 load_saved_replay_buffer = False
 total_learning_timesteps = 10**9
@@ -62,7 +62,7 @@ video_length = 500 # number of frames in the video
 
 # Initialize W&B project
 wandb.init(
-    project="aloha-simple-linear_reward",  # Replace with your project name
+    project="aloha-simple-sparse_reward",  # Replace with your project name
     config={
         "algorithm": "SAC",
         "env": "SimpleAloha",

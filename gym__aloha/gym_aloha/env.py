@@ -265,10 +265,12 @@ class SimpleAlohaEnv(gym.Env):
         
         self._env = self._make_env_task(self.task)
         self.last_action = None
-        self.speed_limit = 0.80 # rad/s
+        self.use_speed_limit = False
+        self.speed_limit = 2.1 # rad/s
         self.max_delta_per_step = self.speed_limit * DT
         self.tolleranz   = 0.05
         self.action_is_vel_not_pos = True 
+        
         
         # fetch max_episode_steps from the environment registry
         self.max_episode_steps = gym.envs.registry["gym_aloha/AlohaSimple"].max_episode_steps
@@ -306,7 +308,7 @@ class SimpleAlohaEnv(gym.Env):
                 }
             )
 
-        self.action_space = spaces.Box(low=-0.9, high=0.9, shape=(len(ACTIONS),), dtype=np.float32)
+        self.action_space = spaces.Box(low=-2.1, high=2.1, shape=(len(ACTIONS),), dtype=np.float32)
 
     def render(self):
         return self._render(visualize=True)
@@ -385,14 +387,20 @@ class SimpleAlohaEnv(gym.Env):
     def step(self, action):
         assert action.ndim == 1
         
-        if self.action_is_vel_not_pos:
-            pos = self._env._task.get_qpos(self._env.physics)
-            action = pos + self.tanH(action)*DT
+        if self.use_speed_limit:
+            if self.action_is_vel_not_pos:
+                pos = self._env._task.get_qpos(self._env.physics)
+                action = pos + self.tanH(action)*DT
+            else:
+                # action = self.clip_speed(action)
+                action = self.tanH_speed(action)
         else:
-            # speed limit if wanted
-            # action = self.clip_speed(action)
-            action = self.tanH_speed(action)
-        # set every action value after position 5 to 0
+            if self.action_is_vel_not_pos:
+                pos = self._env._task.get_qpos(self._env.physics)
+                action = pos + action*DT
+            else:
+                pass
+        
         action[6:] = 0
         action[7] = np.pi
         _, reward, _, raw_obs = self._env.step(action)
@@ -403,6 +411,13 @@ class SimpleAlohaEnv(gym.Env):
             
         # TODO(rcadene): add an enum
         terminated = is_success = False
+        try:
+            if self._env._task.terminate_env_when_max_reward:
+                if reward == self._env._task.max_reward:
+                    terminated = is_success = True
+        except Exception as e:
+            print(f"Error in checking termination condition: {e}")
+            pass
 
         info = {"is_success": is_success}
         observation = self._format_raw_obs(raw_obs)

@@ -241,13 +241,18 @@ class SimpleTask(BimanualViperXTask):
 
     def __init__(self, random=None):
         super().__init__(random=random)
-        self.max_reward = 6
+        self.max_reward = 2
         self.rand_init_position_mode = 2
         """ 0 = none, 1 = unform, 2 = + or - random_init_range"""
         self.random_init_range = 0.3
+        """ 0 = sparse, 1 = sum of abs, 2 = 1/(sum of abs)"""
+        self.last_reward = 0
+        self.terminate_env_when_max_reward = True
+        self.init_diff = np.sum(np.ones(6) * self.random_init_range)
 
     def initialize_episode(self, physics):
         """Sets the state of the environment at the start of each episode."""
+        self.last_reward = 0
 
         # reset qpos and control for the arms only
         if self.rand_init_position_mode == 0:
@@ -272,21 +277,30 @@ class SimpleTask(BimanualViperXTask):
     def get_env_state(physics):
         env_state = physics.data.qpos.copy()[:16]
         return env_state
+    
 
     def get_reward(self, physics):
-
-        # reward = 0
-
-        # for every joint within the left arm
-        # for i in range(6):
-        #     if physics.data.qpos[i] > 0.3 and physics.data.qpos[i] < -0.3:
-        #         reward -= 10
-
-        # for i in range(6):
-        #     if physics.data.qpos[i] < 0.3 and physics.data.qpos[i] > -0.3:
-        #         reward += 1
-
-        reward = self.max_reward - 1*np.sum(np.abs(physics.data.qpos[:6]))
+        # sparse reward
+        # it gives a reward when ever the position is closer to the 0 position
+        # but it gives the reward only once
+        reward = 0
+        a = 1 - (np.sum(np.abs(physics.data.qpos[:6]) / self.init_diff))
+        n = 10 # number of steps where reward is given
+        a = round(a*n)
+        
+        if a < 0:
+            reward = 0
+            self.last_reward = 0
+        elif a > self.last_reward:
+            reward = 1+a*0.1
+            self.last_reward = a
+        elif a < self.last_reward:
+            reward = -1-a*0.1
+            self.last_reward = a
+        
+        
+        # Dense reward
+        #reward = self.max_reward - 1*np.sum(np.abs(physics.data.qpos[:6]))
         # reward = 1/(np.sum(np.abs(physics.data.qpos[:6])))
         # if reward > 1000:
         #     reward = 1000
