@@ -17,11 +17,7 @@ from gym_aloha.constants import (
     START_ARM_POSE_SIMPLE,
 )
 from gym_aloha.tasks.sim import BOX_POSE, InsertionTask, TransferCubeTask, SimpleTask
-from gym_aloha.tasks.sim_end_effector import (
-    InsertionEndEffectorTask,
-    TransferCubeEndEffectorTask,
-    SimpleEffectorTask,
-)
+from gym_aloha.tasks.sim_end_effector import SimpleEndEffectorTask
 from gym_aloha.utils import sample_box_pose, sample_insertion_pose
 
 class AlohaEnv(gym.Env):
@@ -407,6 +403,134 @@ class SimpleAlohaEnv(gym.Env):
         info = {"is_success": is_success}
         observation = self._format_raw_obs(raw_obs)
         return observation, reward, terminated, truncated, info
+
+    def close(self):
+        pass
+
+class SimpleAlohaEnvEndEffector(gym.Env):
+    # TODO(aliberts): add "human" render_mode
+    metadata = {"render_modes": ["rgb_array"], "render_fps": 50}
+
+    def __init__(
+        self,
+        task,
+        obs_type="ee_pos",
+        render_mode="rgb_array",
+        observation_width=640,
+        observation_height=480,
+        visualization_width=640,
+        visualization_height=480,
+
+    ):
+        super().__init__()
+        print("running SimpleAlohaEnv init")
+        self.task = task        
+        self.obs_type = obs_type
+        self.render_mode = render_mode
+        self.observation_width = observation_width
+        self.observation_height = observation_height
+        self.visualization_width = visualization_width
+        self.visualization_height = visualization_height
+        
+        self._env = self._make_env_task(self.task)
+        self.last_action = None
+        self.speed_limit = 0.80 # rad/s
+        self.max_delta_per_step = self.speed_limit * DT
+        self.tolleranz   = 0.05
+        self.action_is_vel_not_pos = True 
+        
+        # fetch max_episode_steps from the environment registry
+        self.max_episode_steps = gym.envs.registry["gym_aloha/SimpleAlohaEndEffector"].max_episode_steps
+        
+        if self.obs_type == "ee_pos":
+            self.observation_space = spaces.Dict(
+                {
+                    "end_effector_pos": spaces.Box(low=-1.0, high=1.0, shape=(2,), dtype=np.float32),  # x, y
+                    "target_position": spaces.Box(low=-1.0, high=1.0, shape=(2,), dtype=np.float32),  # x, y
+                }
+            )
+
+        self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(2,), dtype=np.float32)  # [x, y]
+
+    def render(self):
+        return self._render(visualize=True)
+
+    def _render(self, visualize=False):
+        assert self.render_mode == "rgb_array"
+        width, height = (
+            (self.visualization_width, self.visualization_height)
+            if visualize
+            else (self.observation_width, self.observation_height)
+        )
+        image = self._env.physics.render(height=height, width=width, camera_id="angle")
+        return image
+
+    def _make_env_task(self, task_name):
+        # time limit is controlled by StepCounter in env factory
+        time_limit = float("inf")
+
+        if task_name == "simple_ee":
+            xml_path = ASSETS_DIR / "bimanual_viperx_simple_end_effector.xml"
+            physics = mujoco.Physics.from_xml_path(str(xml_path))
+            task = SimpleEndEffectorTask()
+        else:
+            raise NotImplementedError(task_name)
+
+        env = control.Environment(
+            physics, task, time_limit, control_timestep=DT, n_sub_steps=None, flat_observation=False
+        )
+        return env
+
+    def _format_raw_obs(self, raw_obs):
+        if self.obs_type == "ee_pos":
+            # Ensure keys match what get_observation returns and cast
+            obs = {
+                # Assuming raw_obs["mocap_pose_left"] is already float32 from get_observation
+                "end_effector_pos": raw_obs["mocap_pose_left"][:2],  # This should already be float32
+                # Assuming raw_obs["target_position"] is already float32 from get_observation
+                "target_position": raw_obs["target_position"],  # This should already be float32
+            }
+            # If you added other components, ensure they are float32 here too,
+            # although casting in get_observation is usually sufficient.
+            # Example:
+            # if "gripper_ctrl" in raw_obs:
+            #    obs["gripper_ctrl"] = raw_obs["gripper_ctrl"].astype(np.float32) # Redundant if cast in task
+        else:
+            raise NotImplementedError(f"Unsupported obs_type: {self.obs_type}")
+        return obs
+
+    def reset(self, seed=None, options=None):
+        super().reset(seed=seed)
+
+        # Seed the task if provided
+        if seed is not None:
+            self._env.task.random.seed(seed)
+            self._env.task._random = np.random.RandomState(seed)
+
+        # Reset the environment
+        raw_obs = self._env.reset()
+        observation = self._format_raw_obs(raw_obs.observation)
+        info = {"is_success": False}
+        return observation, info
+    
+
+    def step(self, action):
+        assert action.ndim == 1
+
+        # Extract x and y positions from the action
+        desired_pos = np.array([action[0], action[1], 0.29525084])  # Fixed z-axis
+        desired_quat = np.array([1, 0, 0, 0])  # Fixed orientation
+
+        # Update mocap position and orientation
+        np.copyto(self._env.physics.data.mocap_pos[0], desired_pos)
+        np.copyto(self._env.physics.data.mocap_quat[0], desired_quat)
+
+        # Step the simulation
+        _, reward, _, raw_obs = self._env.step(action)
+
+        # Process observation
+        observation = self._format_raw_obs(raw_obs)
+        return observation, reward, False, False, {}
 
     def close(self):
         pass

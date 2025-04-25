@@ -9,20 +9,12 @@ from stable_baselines3.common.callbacks import CheckpointCallback, BaseCallback
 from stable_baselines3.common.env_util import make_vec_env
 import torch
 import glob
-#from xvfbwrapper import Xvfb
-
-# Start Xvfb
-#vdisplay = Xvfb()
-#vdisplay.start()
-
-# Set the DISPLAY environment variable
-#os.environ['DISPLAY'] = ':{}'.format(vdisplay.new_display)
 
 # Set up EGL for headless rendering
-#os.environ['MUJOCO_GL'] = 'egl'
+os.environ['MUJOCO_GL'] = 'egl'
 
 try:
-    env = gym.make("gym_aloha/AlohaSimple")
+    env = gym.make("gym_aloha/SimpleAlohaEndEffector")
     video_length = 300 # number of frames in the video
 
     try:
@@ -73,4 +65,3 @@ try:
 
 finally:
     print("Weeeerbung Eeeende")
-    #vdisplay.stop()

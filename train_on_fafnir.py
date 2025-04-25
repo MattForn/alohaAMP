@@ -43,7 +43,7 @@ buffer_size = 2**22
 learning_rate = 0.0002
 tau = 0.005
 gamma = 0.99
-target_entropy = -14
+#target_entropy = -14
 ent_coef = "auto" #0.2
 load_saved_model = False
 load_saved_replay_buffer = False
@@ -56,10 +56,10 @@ del_old_checkpoints=True
 
 # Initialize W&B project
 wandb.init(
-    project="simple_aloha_env",
+    project="simple_aloha_env_ee",
     config={
         "algorithm": "SAC",
-        "env": "SimpleAloha",
+        "env": "SimpleAlohaEndEffector",
         "batch_size": batch_size,
         "buffer_size": buffer_size,
         "learning_timesteps": total_learning_timesteps,
@@ -67,7 +67,7 @@ wandb.init(
 )
 
 try:    
-    env = gym.make("gym_aloha/AlohaSimple")
+    env = gym.make("gym_aloha/SimpleAlohaEndEffector")
     #env = make_vec_env("gym_aloha/AlohaSimple", n_envs=4)
 
     #observation, info = env.reset()
