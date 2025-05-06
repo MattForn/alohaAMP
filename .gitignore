@@ -4,3 +4,4 @@ examples/
 example.py
 videos/
 wandb/
+__pycache__/

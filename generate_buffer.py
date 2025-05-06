@@ -8,11 +8,13 @@ from gym_aloha.constants import DT
 import torch
 
 speed = 2.0 # speed of the agent
+make_video = False
 
 #init the env
 env = gym.make("gym_aloha/AlohaSimple")
 obs, info = env.reset()
-
+env.unwrapped._env._task.rand_init_position_mode = 1
+env.unwrapped._env._task.random_init_range = 0.4
 env.use_speed_limit = False
 env.speed_limit = speed
 env.action_is_vel_not_pos = True
@@ -22,7 +24,7 @@ action_space = env.action_space
 #ToDo: make shure thet the actions taken are clipped what the action space is
 
 # init before filling with actual data from generation
-N = 1000 # Number of demonstration steps
+N = 20000 # Number of demonstration steps
 obs_shape = np.shape(obs["agent_pos"]) # Example observation shape
 action_dim = env.action_space.shape[0]
 all_obs = [] # Use lists to store dictionary observations
@@ -55,16 +57,18 @@ for i in range(N):
     all_rewards[i] = reward
     all_dones[i] = terminated
     all_timeouts[i] = truncated
-    image = env.render()
-    frames.append(image)
+    if make_video:
+        image = env.render()
+        frames.append(image)
     
     if terminated or truncated:
         next_obs, info = env.reset()
         
     obs = next_obs
 
-filename = "videos/generated_.mp4"
-imageio.mimsave(filename, np.stack(frames), fps=25)
+if make_video:
+    filename = "videos/generated_.mp4"
+    imageio.mimsave(filename, np.stack(frames), fps=25)
 
 
 # --- Post-processing ---
